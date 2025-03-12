@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summoners War Speed Tuning Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <h1>Summoners War Speed Tuning Calculator</h1>
+    <h4>Select the monsters you'd like to tune using the selectors below (type the name once you click on the dropdown for quick search).</h4>
+    <h4>The tuning order is left to right.</h4>
+    <h4>Speed from runes is the green + number you see next to speed in your monster details.</h4>
+    <div class="calculator">
+        <div class="team friendly">
+            <div class="monster">
+                <div class="monster-main-stats">
+                <select id="friendly1" onchange="updateMonster('friendly1')">
+                    <option value="">Select Monster</option>
+                </select>
+                <img id="friendly1-image" src="Bernard.png" alt="Monster" class="monster-image">
+                <div class="monster-stats">
+                    <p>Name: <span id="friendly1-name"></span></p>
+                    <p>Base Speed: <span id="friendly1-speed"></span></p>
+                </div>
+                <div class="artifact-speed">
+                    <label for="friendly1-artifact-speed">% SPD UP from Artifacts:</label>
+                    <input type="number" id="friendly1-artifact-speed" min="0" max="1000" step="1" value="0" onchange="updateArtifactSpeed('friendly1')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Enter the total % of SPD UP effect shown on your artifacts (both left and right!)</span>
+                    </div>
+                </div>
+                <div class="rune-speed">
+                    <label for="friendly1-rune-speed">Speed from Runes:</label>
+                    <input type="number" id="friendly1-rune-speed" min="0" max="1000" step="1" value="0" onchange="updateRuneSpeed('friendly1')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Enter the total speed from runes. This is the green + number to the right of your monster's speed in the monster details.</span>
+                    </div>
+                </div>
+                <div class="swift-checker">
+                    <label><input type="checkbox" id="friendly1-swift" onchange="updateSwift('friendly1')"><span>Swift?</span></label>
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Toggle whether or not the monster has Swift runes (needed for precise calculations using Swift)</span>
+                    </div>
+                </div>
+                <div id="friendly1-combat-speed" class="combat-speed">Combat Speed: 0</div>
+                <div class="monster-special-abilities">
+                <div id="friendly1-atb-boost-container" class="atb-boost" style="display: none;">
+                    <label for="friendly1-atb-boost">ATB Boost %:</label>
+                    <input type="number" id="friendly1-atb-boost" min="0" max="100" step="1" value="0" onchange="updateAtbBoost('friendly1')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Input the % ATB Boost shown in the skill. If it is a skill that can be skilled up, make sure to include the extra % from skilling up the monster's boost skill.</span>
+                    </div>
+                </div>
+                <div id="friendly1-speedlead-container" style="display: none;">
+                    <label>
+                        <input type="checkbox" id="friendly1-speedlead" onchange="updateSpeedLead('friendly1')">
+                        <span id="friendly1-speedlead-value"></span>% speed lead
+                    </label>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div class="monster">
+                <div class="monster-main-stats">
+                <select id="friendly2" onchange="updateMonster('friendly2')">
+                    <option value="">Select Monster</option>
+                </select>
+                <img id="friendly2-image" src="Galleon.png" alt="Monster" class="monster-image">
+                <div class="monster-stats">
+                    <p>Name: <span id="friendly2-name"></span></p>
+                    <p>Base Speed: <span id="friendly2-speed"></span></p>
+
+                </div>
+                <div class="artifact-speed">
+                    <label for="friendly2-artifact-speed">% SPD UP from Artifacts:</label>
+                    <input type="number" id="friendly2-artifact-speed" min="0" max="1000" step="1" value="0" onchange="updateArtifactSpeed('friendly2')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Enter the total % of SPD UP effect shown on your artifacts (both left and right!)</span>
+                    </div>
+                </div>
+                <div class="rune-speed">
+                    <label for="friendly2-rune-speed">Speed from Runes:</label>
+                    <input type="number" id="friendly2-rune-speed" min="0" max="1000" step="1" value="0" onchange="updateRuneSpeed('friendly2')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Enter the total speed from runes. This is the green + number to the right of your monster's speed in the monster details.</span>
+                    </div>
+                </div>
+                <div class="swift-checker">
+                    <label><input type="checkbox" id="friendly2-swift" onchange="updateSwift('friendly2')"><span>Swift?</span></label>
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Toggle whether or not the monster has Swift runes (needed for precise calculations using Swift)</span>
+                    </div>
+                </div>
+                <div id="friendly2-combat-speed" class="combat-speed">Combat Speed: 0</div>
+                    <div class="monster-special-abilities">
+                    <div id="friendly2-speedlead-container" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="friendly2-speedlead" onchange="updateSpeedLead('friendly2')">
+                            <span id="friendly2-speedlead-value"></span>% speed lead
+                        </label>
+                    </div>
+                    <div id="friendly2-atb-boost-container" class="atb-boost" style="display: none;">
+                        <label for="friendly2-atb-boost">ATB Boost %:</label>
+                        <input type="number" id="friendly2-atb-boost" min="0" max="100" step="1" value="0" onchange="updateAtbBoost('friendly2')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Input the % ATB Boost shown in the skill. If it is a skill that can be skilled up, make sure to include the extra % from skilling up the monster's boost skill.</span>
+                    </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+            <div class="monster">
+                <div class="monster-main-stats">
+                <select id="friendly3" onchange="updateMonster('friendly3')">
+                    <option value="">Select Monster</option>
+                </select>
+                <img id="friendly3-image" src="Chandra.png" alt="Monster" class="monster-image">
+                <div class="monster-stats">
+                    <p>Name: <span id="friendly3-name"></span></p>
+                    <p>Base Speed: <span id="friendly3-speed"></span></p>
+                </div>
+                <div class="artifact-speed">
+                    <label for="friendly3-artifact-speed">% SPD UP from Artifacts:</label>
+                    <input type="number" id="friendly3-artifact-speed" min="0" max="1000" step="1" value="0" onchange="updateArtifactSpeed('friendly3')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Enter the total % of SPD UP effect shown on your artifacts (both left and right!)</span>
+                    </div>
+                </div>
+                <div class="rune-speed">
+                    <label for="friendly3-rune-speed">Speed from Runes:</label>
+                    <input type="number" id="friendly3-rune-speed" min="0" max="1000" step="1" value="0" onchange="updateRuneSpeed('friendly3')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Enter the total speed from runes. This is the green + number to the right of your monster's speed in the monster details.</span>
+                    </div>
+                </div>
+                <div class="swift-checker">
+                    <label><input type="checkbox" id="friendly3-swift" onchange="updateSwift('friendly3')"><span>Swift?</span></label>
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Toggle whether or not the monster has Swift runes (needed for precise calculations using Swift)</span>
+                    </div>
+                </div>
+                <div id="friendly3-combat-speed" class="combat-speed">Combat Speed: 0</div>
+                                    <div class="monster-special-abilities">
+                    <div id="friendly3-speedlead-container" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="friendly3-speedlead" onchange="updateSpeedLead('friendly3')">
+                            <span id="friendly3-speedlead-value"></span>% speed lead
+                        </label>
+                    </div>
+                    <div id="friendly3-atb-boost-container" class="atb-boost" style="display: none;">
+                        <label for="friendly3-atb-boost">ATB Boost %:</label>
+                        <input type="number" id="friendly3-atb-boost" min="0" max="100" step="1" value="0" onchange="updateAtbBoost('friendly3')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Input the % ATB Boost shown in the skill. If it is a skill that can be skilled up, make sure to include the extra % from skilling up the monster's boost skill.</span>
+                    </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--
+     <h2>Enemy Team</h2>
+        <div class="team enemy">
+            <div class="monster">
+                <select id="enemy1" onchange="updateMonster('enemy1')">
+                    <option value="">Select Monster</option>
+                </select>
+                <img id="enemy1-image" src="placeholder.jpg" alt="Monster" class="monster-image">
+                <div class="monster-stats">
+                    <p>Name: <span id="enemy1-name"></span></p>
+                    <p>Base Speed: <span id="enemy1-speed"></span></p>
+                    <div id="enemy1-speedlead-container" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="enemy1-speedlead" onchange="updateSpeedLead('enemy1')">
+                            <span id="enemy1-speedlead-value"></span>% speed lead
+                        </label>
+                    </div>
+                </div>
+                <div class="artifact-speed">
+                    <label for="enemy1-artifact-speed">% SPD UP from Artifacts:</label>
+                    <input type="number" id="enemy1-artifact-speed" min="0" max="1000" step="1" value="0" onchange="updateArtifactSpeed('enemy1')">
+                </div>
+                <div class="rune-speed">
+                    <label for="enemy1-rune-speed">Speed from Runes:</label>
+                    <input type="number" id="enemy1-rune-speed" min="0" max="1000" step="1" value="0" onchange="updateRuneSpeed('enemy1')">
+                </div>
+                <div id="enemy1-atb-boost-container" class="atb-boost" style="display: none;">
+                    <label for="enemy1-atb-boost">ATB Boost %:</label>
+                    <input type="number" id="enemy1-atb-boost" min="0" max="100" step="1" value="0" onchange="updateAtbBoost('enemy1')">
+                </div>
+               <div class="turn-order">
+                    <label><input type="checkbox" name="enemy-turn" value="1"><span>1</span></label>
+                    <label><input type="checkbox" name="enemy-turn" value="2"><span>2</span></label>
+                    <label><input type="checkbox" name="enemy-turn" value="3"><span>3</span></label>
+                </div>
+            </div>
+            <div class="monster">
+                <select id="enemy2" onchange="updateMonster('enemy2')">
+                    <option value="">Select Monster</option>
+                </select>
+                <img id="enemy2-image" src="placeholder.jpg" alt="Monster" class="monster-image">
+                <div class="monster-stats">
+                    <p>Name: <span id="enemy2-name"></span></p>
+                    <p>Base Speed: <span id="enemy2-speed"></span></p>
+                    <div id="enemy2-speedlead-container" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="enemy2-speedlead" onchange="updateSpeedLead('enemy2')">
+                            <span id="enemy2-speedlead-value"></span>% speed lead
+                        </label>
+                    </div>
+                </div>
+                <div class="artifact-speed">
+                    <label for="enemy2-artifact-speed">% SPD UP from Artifacts:</label>
+                    <input type="number" id="enemy2-artifact-speed" min="0" max="1000" step="1" value="0" onchange="updateArtifactSpeed('enemy2')">
+                </div>
+                <div class="rune-speed">
+                    <label for="enemy2-rune-speed">Speed from Runes:</label>
+                    <input type="number" id="enemy2-rune-speed" min="0" max="1000" step="1" value="0" onchange="updateRuneSpeed('enemy2')">
+                </div>
+                <div id="enemy2-atb-boost-container" class="atb-boost" style="display: none;">
+                    <label for="enemy2-atb-boost">ATB Boost %:</label>
+                    <input type="number" id="enemy2-atb-boost" min="0" max="100" step="1" value="0" onchange="updateAtbBoost('enemy2')">
+                </div>
+                <div class="turn-order">
+                    <label><input type="checkbox" name="enemy-turn" value="1"><span>1</span></label>
+                    <label><input type="checkbox" name="enemy-turn" value="2"><span>2</span></label>
+                    <label><input type="checkbox" name="enemy-turn" value="3"><span>3</span></label>
+                </div>
+            </div>
+            <div class="monster">
+                <select id="enemy3" onchange="updateMonster('enemy3')">
+                    <option value="">Select Monster</option>
+                </select>
+                <img id="enemy3-image" src="placeholder.jpg" alt="Monster" class="monster-image">
+                <div class="monster-stats">
+                    <p>Name: <span id="enemy3-name"></span></p>
+                    <p>Base Speed: <span id="enemy3-speed"></span></p>
+                    <div id="enemy3-speedlead-container" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="enemy3-speedlead" onchange="updateSpeedLead('enemy3')">
+                            <span id="enemy3-speedlead-value"></span>% speed lead
+                        </label>
+                    </div>
+                </div>
+                <div class="artifact-speed">
+                    <label for="enemy3-artifact-speed">% SPD UP from Artifacts:</label>
+                    <input type="number" id="enemy3-artifact-speed" min="0" max="1000" step="1" value="0" onchange="updateArtifactSpeed('enemy3')">
+                </div>
+                <div class="rune-speed">
+                    <label for="enemy3-rune-speed">Speed from Runes:</label>
+                    <input type="number" id="enemy3-rune-speed" min="0" max="1000" step="1" value="0" onchange="updateRuneSpeed('enemy3')">
+                </div>
+                <div id="enemy3-atb-boost-container" class="atb-boost" style="display: none;">
+                    <label for="enemy3-atb-boost">ATB Boost %:</label>
+                    <input type="number" id="enemy3-atb-boost" min="0" max="100" step="1" value="0" onchange="updateAtbBoost('enemy3')">
+                </div>
+               <div class="turn-order">
+                    <label><input type="checkbox" name="enemy-turn" value="1"><span>1</span></label>
+                    <label><input type="checkbox" name="enemy-turn" value="2"><span>2</span></label>
+                    <label><input type="checkbox" name="enemy-turn" value="3"><span>3</span></label>
+                </div>
+            </div>
+        </div>-->
+    </div>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+
+body {
+    font-family: 'Leelawadee UI', 'Segoe UI', sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+}
+.calculator {
+    display: flex;
+    flex-direction: column;
+}
+.team {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.monster {
+    background-color: #2d2d2d;
+    border: 1px solid #404040;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+.monster img {
+    max-width: 100px;
+    height: auto;
+}
+.monster select {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+select, input[type="number"] {
+    background-color: #363636;
+    border: 1px solid #505050;
+    color: #e0e0e0;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.turn-order {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.turn-order label {
+    margin: 0 5px;
+}
+
+.turn-order input[type="checkbox"] {
+    display: none;
+}
+
+.turn-order span {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #ddd;
+    text-align: center;
+    line-height: 30px;
+    cursor: pointer;
+}
+
+.turn-order input[type="checkbox"]:checked + span {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.swift-checkbox {
+    margin-bottom: 10px;
+}
+
+.swift-checkbox label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.swift-checkbox input[type="checkbox"] {
+    margin-right: 5px;
+}
+.artifact-speed {
+    margin-bottom: 10px;
+}
+
+.artifact-speed label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.artifact-speed input {
+    width: 60px;
+}
+.turn-order-display {
+    margin-top: 30px;
+}
+
+#turn-order-list {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.turn-order-monster {
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.turn-order-monster img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    margin-bottom: 5px;
+}
+
+.rune-speed {
+    margin-bottom: 10px;
+}
+
+.rune-speed label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.rune-speed input {
+    width: 60px;
+}
+
+.atb-boost {
+    margin-bottom: 10px;
+}
+
+.atb-boost label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.atb-boost input {
+    width: 60px;
+}
+
+.monster {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+}
+
+.monster-main-stats {
+    /* Contains everything except ATB and Leader skills */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.monster-special-abilities {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px solid #ccc;
+}
+
+#friendly1-speedlead-container,
+#friendly1-atb-boost-container {
+    background: #f5f5f5;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+#friendly2-speedlead-container,
+#friendly2-atb-boost-container {
+    background: #f5f5f5;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+#friendly3-speedlead-container,
+#friendly3-atb-boost-container {
+    background: #f5f5f5;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.monster-image {
+    display: none;
+}
+
+.monster-image[src*="icons/"] {
+    display: block;
+    margin: 0 auto;
+    height: auto;
+}
+
+.speed-warning {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: red;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+}
+
+.combat-speed {
+    font-size: 1.2em;
+    color: #4CAF50;
+    margin: 15px 0;
+}
+
+h1 {
+    color: #4CAF50;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.monster-special-abilities {
+    background-color: #363636;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+#friendly1-speedlead-container,
+#friendly2-speedlead-container,
+#friendly3-speedlead-container,
+#friendly1-atb-boost-container,
+#friendly2-atb-boost-container,
+#friendly3-atb-boost-container {
+    background-color: #363636;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+label {
+    color: #e0e0e0;
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    accent-color: #4CAF50;
+}
+
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-icon {
+    cursor: pointer;
+    color: #4CAF50;
+    font-size: 18px;
+    padding: 2px 6px;
+    display: inline-block;
+    margin: 0;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    background-color: #4a4a4a;
+    color: #fff;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    position: absolute;
+    z-index: 1;
+    width: 200px;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip-text.show {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block;
+}
