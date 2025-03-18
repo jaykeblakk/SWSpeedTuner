@@ -130,6 +130,7 @@ function updateMonster(id) {
         const speedLeadValue = document.getElementById(`${id}-speedlead-value`);
         
         // Check for ATB boost skills
+        document.getElementById(`${id}-atb-boost`).value = 0;
         const hasAtbBoost = checkForAtbBoost(selectedMonster.skills);
         const atbBoostContainer = document.getElementById(`${id}-atb-boost-container`);
         atbBoostContainer.style.display = hasAtbBoost ? 'block' : 'none';
@@ -140,20 +141,44 @@ function updateMonster(id) {
         } else {
             speedLeadContainer.style.display = 'none';
         }
-
-        // Log monster details
-        console.log('Monster Details:', {
-            name: selectedMonster.name,
-            skills: selectedMonster.skills,
-            leaderSkill: selectedMonster.leader_skill,
-            baseSpeed: selectedMonster.speed
+        
+        const hasSpeedBuff = selectedMonster.skills.some(skillId => {
+            const skill = skillsData.find(s => s.id === skillId);
+            return skill && skill.effects.some(effect => effect.effect.id === 17);
         });
+
+        // Get all artifact speed inputs and containers
+        const artifactInputs = document.querySelectorAll('.artifact-speed input');
+        const artifactContainers = document.querySelectorAll('.artifact-speed');
+
+    if (id === 'friendly1') {
+        const hasSpeedBuff = selectedMonster.skills.some(skillId => {
+            const skill = skillsData.find(s => s.id === skillId);
+            return skill && skill.effects.some(effect => effect.effect.id === 5);
+        });
+        // Get all artifact speed inputs and containers
+        const artifactInputs = document.querySelectorAll('.artifact-speed input');
+        const artifactContainers = document.querySelectorAll('.artifact-speed');
+
+        if (hasSpeedBuff) {
+            artifactContainers.forEach(container => {
+                container.style.display = 'block';
+            });
+        } else {
+            artifactContainers.forEach(container => {
+                container.style.display = 'none';
+            });
+            artifactInputs.forEach(input => {
+                input.value = 0;
+            });
+        }
     }
     
     //calculateTurnOrder();
     recalculateTeamSpeeds();
     updateSpeedDisplayText();
     //checkSpeedOrder();
+}
 }
 
 function checkForAtbBoost(skillIds) {
@@ -219,8 +244,6 @@ function updateRuneSpeed(monsterId) {
     } else if (runeSpeedValue > 1000) {
         runeSpeedInput.value = 1000;
     }
-
-    console.log(`Monster ${monsterId} Rune Speed set to ${runeSpeedInput.value}`);
     //calculateTurnOrder();
     recalculateTeamSpeeds();
     updateSpeedDisplayText();
@@ -286,10 +309,8 @@ function updateArtifactSpeed(monsterId) {
     } else if (artifactSpeedValue > 1000) {
         artifactSpeedInput.value = 1000;
     }
-
-    console.log(`Monster ${monsterId} Artifact Speed set to ${artifactSpeedInput.value}%`);
     //calculateTurnOrder();
-    calculateCombatSpeed(monsterId);
+    //calculateCombatSpeed(monsterId);
     recalculateTeamSpeeds();
     updateSpeedDisplayText();
     //checkSpeedOrder();
@@ -621,7 +642,7 @@ function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConst
     const atbPerTick = Math.ceil((1.15 + leadSkill / 100) * baseBooster + runeSpeedBooster);
     const numerator = atbPerTick * tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration) - atbBoostSum/100;
     const denominator = tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration * (applyModifier ? speedModifier : 1));
-    return Math.ceil((numerator / denominator) - baseSpeed * (1.15 + leadSkill / 100));
+    return Math.ceil(Math.floor((numerator / denominator)) + 0.0001 - baseSpeed * (1.15 + leadSkill / 100));
 }
 
 function recalculateTeamSpeeds() {
@@ -639,29 +660,122 @@ function recalculateTeamSpeeds() {
     // Simple booster speed calculation
     const boosterCombatSpeed = Math.ceil((1.15 + teamSpeedLead/100) * boosterBaseSpeed + boosterRuneSpeed);
     boosterCard.querySelector('.combat-speed').textContent = `Combat Speed: ${boosterCombatSpeed}`;
+    
+    const boosterEffects = getBoosterEffectTypes(boosterId);
+    applyModifier = false;
+    if (boosterEffects.includes(5)){
+        applyModifier = true;
+    }
+    else{
+        applyModifier = false;
+    }
+    //if (boosterEffects.includes(17) && !(boosterEffects.includes(5))){
+      /*  const lastMonsterCard = monsterCards[monsterCards.length - 1];
+        const lastMonsterId = lastMonsterCard.querySelector('select').id;
+        const lastMonsterArtiSpeed = parseFloat(document.getElementById(`${lastMonsterId}-artifact-speed`).value) || 0;
+        const lastMonster = getMonsterDetails(document.getElementById(lastMonsterId).value);
+        const lastMonsterRawSpeed = Math.ceil((1.15 + teamSpeedLead/100) * lastMonster.speed);
+        const lastMonsterTuning = calculateTunedSpeed(teamSpeedLead, boosterBaseSpeed, boosterRuneSpeed, 0.0007, (monsterCards.length - 1), boosterAtbBoost, lastMonsterArtiSpeed, lastMonster.speed, applyModifier);
+        const lastMonsterCombatSpeed = lastMonsterTuning + lastMonsterRawSpeed;
+        const secondMonsterCombatSpeed = lastMonsterCombatSpeed + 1;
+        const secondMonsterCard = monsterCards[1];
+        const secondMonsterId = secondMonsterCard.querySelector('select').id;
+        const secondMonster = getMonsterDetails(document.getElementById(secondMonsterId).value);
+        const secondMonsterRawSpeed = Math.ceil((1.15 + teamSpeedLead/100) * secondMonster.speed);
+        const secondMonsterTunedSpeed = secondMonsterCombatSpeed - secondMonsterRawSpeed;
+        lastMonsterCard.querySelector('.combat-speed').textContent = `Speed Needed: ${lastMonsterTuning}`;
+        secondMonsterCard.querySelector('.combat-speed').textContent = `Speed Needed: ${secondMonsterTunedSpeed}`;*/
+    //}
+    //else{
+        // Calculate tuned speeds for followers using booster's ATB boost
+        monster2tunedspeed = null;
+        monster3tunedspeed = null;
+        monster2combatspeed = null;
+        monster3combatspeed = null;
+        monster2tfnumber = null;
+        monster3tfnumber = null;
+        monster2basespeed = null;
+        mon2efftick = null;
+        monsterCards.slice(1).forEach((card, index) => {
+            const monsterId = card.querySelector('select').id;
+            const monster = getMonsterDetails(document.getElementById(monsterId).value);
+            if (!monster) return;
+            const artiSpeed = parseFloat(document.getElementById(`${monsterId}-artifact-speed`).value) || 0;
+            const tunedSpeed = calculateTunedSpeed(
+                teamSpeedLead,
+                boosterBaseSpeed,
+                boosterRuneSpeed,
+                0.0007,
+                index + 1,
+                boosterAtbBoost,  // Using booster's ATB boost here
+                artiSpeed,
+                monster.speed,
+                applyModifier
+            );
+            if (index == 0)
+                {
+                    // Calculating Galleon's speed
+                    monster2tunedspeed = tunedSpeed;
+                    monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
+                    monster2combatspeed = monster2tunedspeed + monster2rawspeed;
+                    console.log(`Mon 2 Combat Speed: ${monster2combatspeed}`);
+                    boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
+                    mon2efftick = boosterTick + ((index + 1) * (1 + 0.3 * (1 + (artiSpeed / 100))));
+                    console.log(`Mon 2 Effective Tick: ${mon2efftick}`);
+                    monster2tfnumber = ((boosterTick + ((index + 1) * (1 + 0.3 * (1 + (artiSpeed / 100))))) * monster2combatspeed);
+                    console.log(`Mon 2 tuned speed: ${tunedSpeed}`);
+                    console.log(`Mon 2 T/F check number: ${monster2tfnumber}`);
+                    monster2basespeed = monster.speed;
+                }
+            if (index === 1)
+                {
+                    //Calculating Julie's Speed
+                    monster3tunedspeed = tunedSpeed;
+                    monster3rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
+                    monster3combatspeed = monster3tunedspeed + monster3rawspeed;
+                    console.log(`Mon 3 Combat Speed: ${monster3combatspeed}`);
+                    boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
+                    monster3tfnumber = ((boosterTick + ((index) * (1 + 0.3 * (1 + (artiSpeed / 100))))) * monster3combatspeed);
+                    effectivetick = boosterTick + ((index) * (1 + 0.3 * (1 + (artiSpeed / 100))));
+                    console.log(`Mon 3 Effective Tick: ${effectivetick}`);
+                        if (monster3tfnumber > monster2tfnumber)
+                            {
+                                monster2newspeed = Math.ceil(((monster3tfnumber) / (mon2efftick)) - (1.15 + teamSpeedLead / 100) * monster2basespeed);
+                                console.log(`Mon 3 T/F check number: ${monster3tfnumber}`);
+                                console.log(`Mon 2 + Speed needed: ${monster2newspeed}`);
+                                console.log(``);
+                                
+                                monster2newspeeddiff = monster2newspeed - monster2tunedspeed;
+                                monster2newtunedspeed = monster2tunedspeed + monster2newspeeddiff;
+                                const secondMonCard = monsterCards[1];
+                                secondMonCard.querySelector('.combat-speed').textContent = `Speed Needed: ${monster2newtunedspeed}`;
+                            }
+                }
+            
+            card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+        });
+    //Checking to see if galleon's combat speed is lower than Julies. If so, we perform the math below to give Galleon the correct speed to make him 1 faster than Julie.
+   // }
+}
 
-    // Calculate tuned speeds for followers using booster's ATB boost
-    monsterCards.slice(1).forEach((card, index) => {
-        const monsterId = card.querySelector('select').id;
-        const monster = getMonsterDetails(document.getElementById(monsterId).value);
-        if (!monster) return;
-
-        const artiSpeed = parseFloat(document.getElementById(`${monsterId}-artifact-speed`).value) || 0;
-
-        const tunedSpeed = calculateTunedSpeed(
-            teamSpeedLead,
-            boosterBaseSpeed,
-            boosterRuneSpeed,
-            0.0007,
-            index + 1,
-            boosterAtbBoost,  // Using booster's ATB boost here
-            artiSpeed,
-            monster.speed,
-            true
-        );
-
-        card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+function getBoosterEffectTypes(boosterId) {
+    const boosterMonster = getMonsterDetails(document.getElementById(boosterId).value);
+    if (!boosterMonster || !boosterMonster.skills) return [];
+    
+    const effectIds = [];
+    
+    boosterMonster.skills.forEach(skillId => {
+        const skill = skillsData.find(s => s.id === skillId);
+        if (skill && skill.effects) {
+            skill.effects.forEach(effect => {
+                if (effect.effect.id === 5 || effect.effect.id === 17) {
+                    effectIds.push(effect.effect.id);
+                }
+            });
+        }
     });
+    
+    return [...new Set(effectIds)];
 }
 
 document.addEventListener('DOMContentLoaded', function() {
