@@ -36,6 +36,7 @@ function populateDropdowns(monsters) {
 let monsterData = null;
 let skillsData = null;
 let SPDBoostConstant = 0.3;
+let kroaBoostTarget = 2;
 
 function checkForMiriam() {
     const monsterCards = Array.from(document.querySelectorAll('.monster'));
@@ -129,8 +130,7 @@ function updateMonster(id) {
                 radio.addEventListener('change', (e) => {
                     kroaBoostTarget = parseInt(e.target.value);
                     recalculateTeamSpeeds();
-                    updateCombatSpeed(id);
-                    checkSpeedOrder();
+                    updateSpeedDisplayText();
                 });
             });
         } else {
