@@ -144,7 +144,6 @@ function updateMonster(id) {
             kroaTargetDiv.style.display = 'block';
         }
     }
-    
     if (selectedMonster) {
         // Update name and speed
         document.getElementById(`${id}-name`).textContent = selectedMonster.name;
