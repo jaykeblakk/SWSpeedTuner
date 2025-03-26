@@ -49,6 +49,17 @@
                 </div>
                 <div id="friendly1-combat-speed" class="combat-speed">Combat Speed: 0</div>
                 <div class="monster-special-abilities">
+                    <div class="kroa-boost-target" style="display: none;">
+                        <p>ATB Boost Target:</p>
+                        <label>
+                            <input type="radio" name="kroa-target" value="2" checked>
+                            Monster 2
+                        </label>
+                        <label>
+                            <input type="radio" name="kroa-target" value="3">
+                            Monster 3
+                        </label>
+                    </div>
                 <div id="friendly1-atb-boost-container" class="atb-boost" style="display: none;">
                     <label for="friendly1-atb-boost">ATB Boost %:</label>
                     <input type="number" id="friendly1-atb-boost" min="0" max="100" step="1" value="0" onchange="updateAtbBoost('friendly1')">
