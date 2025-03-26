@@ -289,3 +289,27 @@ input[type="checkbox"] {
     opacity: 1 !important;
     display: block;
 }
+
+#kroa-boost-target {
+    background: #4a4a4a;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+#kroa-boost-target p {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+#kroa-boost-target label {
+    display: inline-block;
+    margin: 0 10px;
+    cursor: pointer;
+}
+
+#kroa-boost-target input[type="radio"] {
+    margin-right: 5px;
+    vertical-align: middle;
+}

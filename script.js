@@ -121,6 +121,29 @@ function updateMonster(id) {
     const is2A = select.options[select.selectedIndex].text.includes('(2A)');
     const cleanName = selectedValue;
     const selectedMonster = getMonsterDetails(cleanName, is2A);
+    const kroaTargetDiv = document.getElementById('kroa-boost-target');
+    if (id === 'friendly1') {  // If we're updating the booster
+        if (selectedMonster.name === 'Kroa') {
+            kroaTargetDiv.style.display = 'block';
+            document.querySelectorAll('input[name="kroa-target"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    kroaBoostTarget = parseInt(e.target.value);
+                    recalculateTeamSpeeds();
+                    updateCombatSpeed(id);
+                    checkSpeedOrder();
+                });
+            });
+        } else {
+            // Only hide if we're selecting a non-Kroa booster
+            kroaTargetDiv.style.display = 'none';
+            kroaBoostTarget = 2;
+        }
+    } else {
+        // For non-booster positions, check if this card is Kroa
+        if (selectedMonster.name === 'Kroa') {
+            kroaTargetDiv.style.display = 'block';
+        }
+    }
     
     if (selectedMonster) {
         // Update name and speed
@@ -784,10 +807,9 @@ function recalculateTeamSpeeds() {
             const speedBuffActive = firstSpeedBuffPosition !== -1 && currentPosition >= firstSpeedBuffPosition;
             let accumulatedAtbBoost = getAccumulatedAtbBoost(index);
             const isSwift = document.getElementById(`${monsterId}-swift`).checked;
-            if (isKroa && currentPosition !== 1) {
-                accumulatedAtbBoost = 0;
-                }
-            let tunedSpeed = calculateTunedSpeed(
+            if (isKroa) {
+                accumulatedAtbBoost = (actualPosition === kroaBoostTarget - 1) ? accumulatedAtbBoost : 0;
+                let tunedSpeed = calculateTunedSpeed(
                 teamSpeedLead,
                 boosterBaseSpeed,
                 boosterRuneSpeed,
@@ -798,40 +820,54 @@ function recalculateTeamSpeeds() {
                 monster.speed,
                 isSwift,
                 speedBuffActive
-            );
-            if (index == 0)
-                {
-                    // Calculating Galleon's speed
-                    monster2tunedspeed = tunedSpeed;
-                    monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
-                    monster2combatspeed = monster2tunedspeed + monster2rawspeed;
-                    boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
-                    mon2efftick = boosterTick + ((index + 1) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
-                    monster2tfnumber = ((boosterTick + ((index + 1) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster2combatspeed);
-                    monster2basespeed = monster.speed;
-                }
-            if (index === 1)
-                {
-                    //Calculating Julie's Speed
-                    monster3tunedspeed = tunedSpeed;
-                    monster3rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
-                    monster3combatspeed = monster3tunedspeed + monster3rawspeed;
-                    boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
-                    monster3tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster3combatspeed);
-                    effectivetick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
-                        if (monster3tfnumber > monster2tfnumber)
-                            {
-                                monster2newspeed = Math.ceil(((monster3tfnumber) / (mon2efftick)) - (1.15 + teamSpeedLead / 100) * monster2basespeed);
-                                monster2newspeeddiff = monster2newspeed - monster2tunedspeed;
-                                monster2newtunedspeed = monster2tunedspeed + monster2newspeeddiff;
-                                const secondMonCard = monsterCards[1];
-                                secondMonCard.querySelector('.combat-speed').textContent = `Speed Needed: ${monster2newtunedspeed}`;
-                            }
-                }
-            card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+                );
+                card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+            }
+            else{
+                let tunedSpeed = calculateTunedSpeed(
+                    teamSpeedLead,
+                    boosterBaseSpeed,
+                    boosterRuneSpeed,
+                    0.0007,
+                    index + 1,
+                    accumulatedAtbBoost,
+                    artiSpeed,
+                    monster.speed,
+                    isSwift,
+                    speedBuffActive
+                );
+                if (index == 0)
+                    {
+                        // Calculating Galleon's speed
+                        monster2tunedspeed = tunedSpeed;
+                        monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
+                        monster2combatspeed = monster2tunedspeed + monster2rawspeed;
+                        boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
+                        mon2efftick = boosterTick + ((index + 1) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
+                        monster2tfnumber = ((boosterTick + ((index + 1) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster2combatspeed);
+                        monster2basespeed = monster.speed;
+                    }
+                if (index === 1)
+                    {
+                        //Calculating Julie's Speed
+                        monster3tunedspeed = tunedSpeed;
+                        monster3rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
+                        monster3combatspeed = monster3tunedspeed + monster3rawspeed;
+                        boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
+                        monster3tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster3combatspeed);
+                        effectivetick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
+                            if (monster3tfnumber > monster2tfnumber)
+                                {
+                                    monster2newspeed = Math.ceil(((monster3tfnumber) / (mon2efftick)) - (1.15 + teamSpeedLead / 100) * monster2basespeed);
+                                    monster2newspeeddiff = monster2newspeed - monster2tunedspeed;
+                                    monster2newtunedspeed = monster2tunedspeed + monster2newspeeddiff;
+                                    const secondMonCard = monsterCards[1];
+                                    secondMonCard.querySelector('.combat-speed').textContent = `Speed Needed: ${monster2newtunedspeed}`;
+                                }
+                    }
+                card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+            }
         });
-    //Checking to see if galleon's combat speed is lower than Julies. If so, we perform the math below to give Galleon the correct speed to make him 1 faster than Julie.
-   // }
 }
 
 function getBoosterEffectTypes(boosterId) {
