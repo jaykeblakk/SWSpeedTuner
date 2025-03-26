@@ -807,7 +807,7 @@ function recalculateTeamSpeeds() {
             let accumulatedAtbBoost = getAccumulatedAtbBoost(index);
             const isSwift = document.getElementById(`${monsterId}-swift`).checked;
             if (isKroa) {
-                accumulatedAtbBoost = (actualPosition === kroaBoostTarget - 1) ? accumulatedAtbBoost : 0;
+                accumulatedAtbBoost = (currentPosition === kroaBoostTarget - 1) ? accumulatedAtbBoost : 0;
                 let tunedSpeed = calculateTunedSpeed(
                 teamSpeedLead,
                 boosterBaseSpeed,
