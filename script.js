@@ -460,6 +460,8 @@ function initializeDraggableCards() {
                 c.style.zIndex = '1';
                 row.appendChild(c);
             });
+            recalculateTeamSpeeds();
+            updateSpeedDisplayText();
         }
     });
     recalculateTeamSpeeds();
@@ -686,7 +688,7 @@ function getEffectsByPosition() {
 
 function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true) {
     const speedModifier = 1 + SPDBoostConstant * (1 + artiSpeedSum / 100);
-    const atbPerTick = Math.ceil((1.15 + leadSkill / 100) * baseBooster + runeSpeedBooster + 40);
+    const atbPerTick = Math.ceil((1.15 + leadSkill / 100) * baseBooster + runeSpeedBooster);
     const numerator = atbPerTick * tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration) - atbBoostSum/100;
     const denominator = tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration * (applyModifier ? speedModifier : 1));
     const result = numerator / denominator;
@@ -696,9 +698,6 @@ function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConst
     {
         let swiftnum = speedResult % 1;
         let nonswiftnum = (baseSpeed % 4) / 4;
-        console.log(`Swiftnum: ${swiftnum}`);
-        console.log(`Nonswiftnum: ${nonswiftnum}`);
-        console.log(`tunedSpeed: ${speedResult}`);
         if (swiftnum > nonswiftnum)
             {
                 swiftAdjustment = true;
