@@ -313,3 +313,37 @@ input[type="checkbox"] {
     margin-right: 5px;
     vertical-align: middle;
 }
+
+.site-footer {
+    margin-top: 50px;
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #404040;
+    color: #e0e0e0;
+}
+
+.footer-credit {
+    margin-bottom: 15px;
+}
+
+.footer-links {
+    margin-bottom: 15px;
+}
+
+.footer-links a {
+    color: #4CAF50;
+    text-decoration: none;
+    padding: 0 10px;
+    transition: color 0.3s;
+}
+
+.footer-links a:hover {
+    color: #81c784;
+    text-decoration: underline;
+}
+
+.footer-donation {
+    max-width: 1000px;
+    margin: 0 auto;
+    line-height: 1.5;
+}

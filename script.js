@@ -46,10 +46,43 @@ function populateDropdowns(monsters) {
     });
 }*/
 //ABOVE CODE IS NEEDED TO UPDATE MONSTER INFORMATION WHEN NEW MONSTERS ARE RELEASED. DO NOT DELETE.
+function testObtainableMonsterFiltering() {
+    fetch('monsters.json')
+        .then(response => response.json())
+        .then(monsters => {
+            // Filter monsters to only include those with obtainable set to true
+            const filteredMonsters = monsters.filter(monster => monster.obtainable === true);
+            
+            // Sort the filtered monsters by name
+            const sortedMonsters = filteredMonsters.sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Output the total count
+            console.log(`Filtered ${filteredMonsters.length} obtainable monsters from total ${monsters.length}`);
+            
+            // Output the first monster in the array
+            if (sortedMonsters.length > 0) {
+                console.log(`First obtainable monster: ${sortedMonsters[0].name} (${sortedMonsters[0].element}) - ID: ${sortedMonsters[0].com2us_id}`);
+            }
+            
+            // Output the last monster in the array
+            if (sortedMonsters.length > 0) {
+                const lastMonster = sortedMonsters[sortedMonsters.length - 1];
+                console.log(`Last obtainable monster: ${lastMonster.name} (${lastMonster.element}) - ID: ${lastMonster.com2us_id}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching monsters:', error);
+        });
+}
+
+// Call the test function
+testObtainableMonsterFiltering();
+
 let monsterData = null;
 let skillsData = null;
 let SPDBoostConstant = 0.3;
 let kroaBoostTarget = 2;
+let lionelPosition = null;
 
 function checkForMiriam() {
     const monsterCards = Array.from(document.querySelectorAll('.monster'));
@@ -156,6 +189,14 @@ function updateMonster(id) {
         if (selectedMonster.name === 'Kroa') {
             kroaTargetDiv.style.display = 'block';
         }
+    }
+        // Track Lionel's position
+    if (selectedMonster && selectedMonster.name === 'Lionel') {
+        // Extract position number from id (e.g., 'friendly1' -> 1)
+        lionelPosition = parseInt(id.replace('friendly', ''));
+    } else if (lionelPosition && id === `friendly${lionelPosition}`) {
+        // If this position previously had Lionel but now has a different monster
+        lionelPosition = null;
     }
     if (selectedMonster) {
         // Update name and speed
@@ -468,10 +509,19 @@ document.addEventListener('click', (event) => {
     }
 });
 
-function getAccumulatedAtbBoost(currentIndex) {
+function getAccumulatedAtbBoost(currentIndex, targetPosition = null) {
     let totalBoost = 0;
     for(let i = 0; i <= currentIndex; i++) {
         const monsterBoost = parseFloat(document.getElementById(`friendly${i+1}-atb-boost`).value) || 0;
+        
+        // Skip Lionel's boost unless the target is directly after Lionel
+        if (lionelPosition === i+1) {
+            const targetMonsterPosition = targetPosition || currentIndex + 1;
+            if (targetMonsterPosition !== lionelPosition + 1) {
+                continue; // Skip Lionel's boost
+            }
+        }
+        
         if(monsterBoost > 0) {
             totalBoost += monsterBoost;
         }
@@ -593,7 +643,9 @@ function recalculateTeamSpeeds() {
             const artiSpeed = parseFloat(document.getElementById(`${monsterId}-artifact-speed`).value) || 0;
             const currentPosition = index + 1;
             const speedBuffActive = firstSpeedBuffPosition !== -1 && currentPosition >= firstSpeedBuffPosition;
-            let accumulatedAtbBoost = getAccumulatedAtbBoost(index);
+            const thisMonsterPosition = parseInt(monsterId.replace('friendly', ''));
+            let accumulatedAtbBoost = getAccumulatedAtbBoost(index, thisMonsterPosition);
+            
             const isSwift = document.getElementById(`${monsterId}-swift`).checked;
             if (isKroa) {
                 console.log(``);
