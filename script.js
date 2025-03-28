@@ -46,38 +46,6 @@ function populateDropdowns(monsters) {
     });
 }*/
 //ABOVE CODE IS NEEDED TO UPDATE MONSTER INFORMATION WHEN NEW MONSTERS ARE RELEASED. DO NOT DELETE.
-function testObtainableMonsterFiltering() {
-    fetch('monsters.json')
-        .then(response => response.json())
-        .then(monsters => {
-            // Filter monsters to only include those with obtainable set to true
-            const filteredMonsters = monsters.filter(monster => monster.obtainable === true);
-            
-            // Sort the filtered monsters by name
-            const sortedMonsters = filteredMonsters.sort((a, b) => a.name.localeCompare(b.name));
-            
-            // Output the total count
-            console.log(`Filtered ${filteredMonsters.length} obtainable monsters from total ${monsters.length}`);
-            
-            // Output the first monster in the array
-            if (sortedMonsters.length > 0) {
-                console.log(`First obtainable monster: ${sortedMonsters[0].name} (${sortedMonsters[0].element}) - ID: ${sortedMonsters[0].com2us_id}`);
-            }
-            
-            // Output the last monster in the array
-            if (sortedMonsters.length > 0) {
-                const lastMonster = sortedMonsters[sortedMonsters.length - 1];
-                console.log(`Last obtainable monster: ${lastMonster.name} (${lastMonster.element}) - ID: ${lastMonster.com2us_id}`);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching monsters:', error);
-        });
-}
-
-// Call the test function
-testObtainableMonsterFiltering();
-
 let monsterData = null;
 let skillsData = null;
 let SPDBoostConstant = 0.3;
@@ -94,6 +62,8 @@ function checkForMiriam() {
     
     SPDBoostConstant = hasMiriam ? 0.405 : 0.3;
 }
+
+
 // Load the JSON data
 fetch('./monsters.json')
     .then(response => response.json())
@@ -134,7 +104,6 @@ function populateDropdowns(monsters) {
         
         const sortedMonsters = monsters
             .sort((a, b) => a.name.localeCompare(b.name))
-            .slice(60)
             .map(monster => ({
                 ...monster,
                 displayName: monster.awaken_level === 2 ? `${monster.name} (2A)`
@@ -156,8 +125,19 @@ function fetchAndPopulateMonsters() {
     fetch('monsters.json')
         .then(response => response.json())
         .then(monsters => {
-            window.monsterData = monsters;
-            populateDropdowns(monsters);
+            // Filter monsters to only include those with obtainable set to true
+            const filteredMonsters = monsters.filter(monster => monster.obtainable === true);
+            
+            console.log(`Using ${filteredMonsters.length} obtainable monsters from total ${monsters.length}`);
+            
+            // Store the filtered monsters in the global variable
+            window.monsterData = filteredMonsters;
+            
+            // Populate dropdowns with the filtered monsters
+            populateDropdowns(filteredMonsters);
+        })
+        .catch(error => {
+            console.error('Error fetching monsters:', error);
         });
 }
 
@@ -552,7 +532,8 @@ function getEffectsByPosition() {
     return effects;
 }
 
-function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true) {
+function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true, isChilling = false) {
+    console.log(``);
     console.log(`leadSkill: ${leadSkill}`);
     console.log(`baseBooster: ${baseBooster}`);
     console.log(`runeSpeedBooster: ${runeSpeedBooster}`);
@@ -564,7 +545,12 @@ function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConst
     console.log(`isSwift: ${isSwift}`);
     console.log(`applyModifier: ${applyModifier}`);
     const speedModifier = 1 + SPDBoostConstant * (1 + artiSpeedSum / 100);
-    const atbPerTick = Math.ceil((1.15 + leadSkill / 100) * baseBooster + runeSpeedBooster);
+    let atbPerTick = Math.ceil((1.15 + leadSkill / 100) * baseBooster + runeSpeedBooster);
+    if (isChilling)
+        {
+            console.log(`Chilling loop adding 40 to cmb speed.`);
+            atbPerTick = atbPerTick + 40;
+        }
     console.log(`Booster Combat Speed: ${atbPerTick}`);
     const numerator = atbPerTick * tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration) - atbBoostSum/100;
     console.log(`Numerator: ${numerator}`);
@@ -604,12 +590,14 @@ function recalculateTeamSpeeds() {
     const boosterRuneSpeed = parseInt(document.getElementById(`${boosterId}-rune-speed`).value) || 0;
     const boosterAtbBoost = parseFloat(document.getElementById(`${boosterId}-atb-boost`).value) || 0;
     let isKroa = false;
+    let isChilling = false;
     
     // Simple booster speed calculation
     let boosterCombatSpeed = Math.ceil((1.15 + teamSpeedLead/100) * boosterBaseSpeed + boosterRuneSpeed);
     if (boosterMonster.name === "Chilling")
         {
             boosterCombatSpeed = boosterCombatSpeed + 40;
+            isChilling = true;
         }
     if (boosterMonster.name === "Kroa")
         {
@@ -661,7 +649,8 @@ function recalculateTeamSpeeds() {
                 artiSpeed,
                 monster.speed,
                 isSwift,
-                speedBuffActive
+                speedBuffActive,
+                isChilling
                 );
                 card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
             }
@@ -676,7 +665,8 @@ function recalculateTeamSpeeds() {
                     artiSpeed,
                     monster.speed,
                     isSwift,
-                    speedBuffActive
+                    speedBuffActive,
+                    isChilling
                 );
                 if (index == 0)
                     {
