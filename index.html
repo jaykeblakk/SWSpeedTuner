@@ -51,17 +51,6 @@
                 </div>
                 <div id="friendly1-combat-speed" class="combat-speed">Combat Speed: 0</div>
                 <div class="monster-special-abilities">
-                    <div id="kroa-boost-target" style="display: none;">
-                        <p>ATB Boost Target:</p>
-                        <label>
-                            <input type="radio" name="kroa-target" value="2" checked>
-                            Monster 2
-                        </label>
-                        <label>
-                            <input type="radio" name="kroa-target" value="3">
-                            Monster 3
-                        </label>
-                    </div>
                 <div id="friendly1-atb-boost-container" class="atb-boost" style="display: none;">
                     <label for="friendly1-atb-boost">ATB Boost %:</label>
                     <input type="number" id="friendly1-atb-boost" min="0" max="100" step="1" value="0" onchange="updateAtbBoost('friendly1')">
@@ -289,6 +278,9 @@
             </div>
         </div>-->
     </div>
+    <div class="action-buttons">
+    <button id="reset-button" class="action-button">Reset All</button>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <footer class="site-footer">
     <p class="footer-credit">Thank you to Entrei for providing all of the equations for this website to function. Without him, this website could not exist. Also thank you to SWARFARM for providing API's to pull all of the information about each monster.</p>

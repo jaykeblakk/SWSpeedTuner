@@ -216,7 +216,7 @@ select, input[type="number"] {
 .combat-speed {
     font-size: 1.2em;
     color: #4CAF50;
-    margin: 15px 0;
+    margin: 15px 0 2px 0; /* Reduce bottom margin */
 }
 
 h1 {
@@ -260,7 +260,7 @@ input[type="checkbox"] {
 
 .tooltip-icon {
     cursor: pointer;
-    color: #4CAF50;
+    color: #00BCD4;
     font-size: 18px;
     padding: 2px 6px;
     display: inline-block;
@@ -346,4 +346,44 @@ input[type="checkbox"] {
     max-width: 1000px;
     margin: 0 auto;
     line-height: 1.5;
+}
+
+.chilling-explanation {
+    font-size: 12px;
+    color: #4CAF50;
+    font-style: italic;
+    margin-top: -15px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .team {
+        flex-direction: column;
+    }
+    
+    .monster {
+        margin-bottom: 20px;
+    }
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.action-button {
+    background-color: #D32F2F; /* Darker red that fits with your dark theme */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.action-button:hover {
+    background-color: #F44336; /* Lighter red on hover */
 }

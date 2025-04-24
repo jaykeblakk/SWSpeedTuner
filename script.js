@@ -148,83 +148,124 @@ function updateMonster(id) {
     const is2A = select.options[select.selectedIndex].text.includes('(2A)');
     const cleanName = selectedValue;
     const selectedMonster = getMonsterDetails(cleanName, is2A);
-    const kroaTargetDiv = document.getElementById('kroa-boost-target');
-    if (id === 'friendly1') {  // If we're updating the booster
-        if (selectedMonster.name === 'Kroa') {
-            kroaTargetDiv.style.display = 'block';
-            document.querySelectorAll('input[name="kroa-target"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    kroaBoostTarget = parseInt(e.target.value);
-                    recalculateTeamSpeeds();
-                    updateSpeedDisplayText();
-                });
-            });
+    const position = parseInt(id.replace('friendly', ''));
+    
+    if (!selectedMonster) return; // Exit if no monster is selected
+    
+    // Get the current monster card
+    const monsterCard = select.closest('.monster');
+    
+    // Find or create Kroa boost target div for this specific monster card
+    let kroaTargetDiv = monsterCard.querySelector('.kroa-boost-target');
+    if (!kroaTargetDiv) {
+        // Create the div if it doesn't exist
+        kroaTargetDiv = document.createElement('div');
+        kroaTargetDiv.className = 'kroa-boost-target';
+        kroaTargetDiv.style.display = 'none';
+        kroaTargetDiv.innerHTML = `
+            <p>ATB Boost Target:</p>
+            <label>
+                <input type="radio" name="kroa-target-${id}" value="2" checked>
+                Monster 2
+            </label>
+            <label>
+                <input type="radio" name="kroa-target-${id}" value="3">
+                Monster 3
+            </label>
+        `;
+        // Add it to the monster's special abilities section
+        const specialAbilitiesDiv = monsterCard.querySelector('.monster-special-abilities');
+        if (specialAbilitiesDiv) {
+            specialAbilitiesDiv.appendChild(kroaTargetDiv);
         } else {
-            // Only hide if we're selecting a non-Kroa booster
-            kroaTargetDiv.style.display = 'none';
-            kroaBoostTarget = 2;
-        }
-    } else {
-        // For non-booster positions, check if this card is Kroa
-        if (selectedMonster.name === 'Kroa') {
-            kroaTargetDiv.style.display = 'block';
+            // If no special abilities div, add it directly to the monster card
+            monsterCard.appendChild(kroaTargetDiv);
         }
     }
-        // Track Lionel's position
-    if (selectedMonster && selectedMonster.name === 'Lionel') {
-        // Extract position number from id (e.g., 'friendly1' -> 1)
+    
+    // Show/hide Kroa boost target div based on whether this monster is Kroa
+    if (selectedMonster.name === 'Kroa' || selectedMonster.name === 'Ramael and Judiah' || selectedMonster.name === 'Yeji and Sapsaree') {
+        kroaTargetDiv.style.display = 'block';
+        
+        // Add event listeners to the radio buttons
+        kroaTargetDiv.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                kroaBoostTarget = parseInt(e.target.value);
+                recalculateTeamSpeeds();
+                updateSpeedDisplayText();
+            });
+        });
+    } else {
+        kroaTargetDiv.style.display = 'none';
+    }
+    
+        // Remove any existing Chilling explanation text
+    const existingExplanation = monsterCard.querySelector('.chilling-explanation');
+    if (existingExplanation) {
+        existingExplanation.remove();
+    }
+    
+    // Add Chilling explanation text if this is Chilling AND in slot 1
+    if (selectedMonster.name === 'Chilling' && position === 1) {
+        const combatSpeedElement = monsterCard.querySelector('.combat-speed');
+        const chillingExplanation = document.createElement('p');
+        chillingExplanation.className = 'chilling-explanation';
+        chillingExplanation.textContent = 'Speed calculated with both Will and Shield buffs';
+        
+        // Insert after the combat speed element
+        combatSpeedElement.after(chillingExplanation);
+    }
+    
+    // Track Lionel's position
+    if (selectedMonster.name === 'Lionel') {
         lionelPosition = parseInt(id.replace('friendly', ''));
     } else if (lionelPosition && id === `friendly${lionelPosition}`) {
-        // If this position previously had Lionel but now has a different monster
         lionelPosition = null;
     }
-    if (selectedMonster) {
-        // Update name and speed
-        document.getElementById(`${id}-name`).textContent = selectedMonster.name;
-        document.getElementById(`${id}-speed`).textContent = selectedMonster.speed;
-        
-        // Set monster image based on awakening status
-    if (selectedMonster) {
-        document.getElementById(`${id}-name`).textContent = selectedMonster.name;
-        document.getElementById(`${id}-speed`).textContent = selectedMonster.speed;
-
-        if (selectedMonster.image_filename) {
-            const monsterImage = document.getElementById(`${id}-image`);
-            monsterImage.src = `./icons/${selectedMonster.image_filename}`;
-        }
+    
+    // Update name and speed
+    document.getElementById(`${id}-name`).textContent = selectedMonster.name;
+    document.getElementById(`${id}-speed`).textContent = selectedMonster.speed;
+    
+    // Set monster image based on awakening status
+    if (selectedMonster.image_filename) {
+        const monsterImage = document.getElementById(`${id}-image`);
+        monsterImage.src = `./icons/${selectedMonster.image_filename}`;
     }
 
-        // Handle speed leader skill
-        const speedLeadContainer = document.getElementById(`${id}-speedlead-container`);
-        const speedLeadValue = document.getElementById(`${id}-speedlead-value`);
-        
-        // Check for ATB boost skills
-        document.getElementById(`${id}-atb-boost`).value = 0;
-        const hasAtbBoost = checkForAtbBoost(selectedMonster.skills);
-        const atbBoostContainer = document.getElementById(`${id}-atb-boost-container`);
-        atbBoostContainer.style.display = hasAtbBoost ? 'block' : 'none';
-        
-        if (selectedMonster.leader_skill && selectedMonster.leader_skill.attribute === "Attack Speed") {
-            speedLeadContainer.style.display = 'block';
-            speedLeadValue.textContent = selectedMonster.leader_skill.amount;
-        } else {
-            speedLeadContainer.style.display = 'none';
-        }
-        
-        const hasSpeedBuff = selectedMonster.skills.some(skillId => {
-            const skill = skillsData.find(s => s.id === skillId);
-            return skill && skill.effects.some(effect => effect.effect.id === 17);
-        });
-
-        // Get all artifact speed inputs and containers
-        const artifactInputs = document.querySelectorAll('.artifact-speed input');
-        const artifactContainers = document.querySelectorAll('.artifact-speed');
-
+    // Handle speed leader skill
+    const speedLeadContainer = document.getElementById(`${id}-speedlead-container`);
+    const speedLeadValue = document.getElementById(`${id}-speedlead-value`);
+    
+    if (selectedMonster.leader_skill && selectedMonster.leader_skill.attribute === "Attack Speed") {
+        speedLeadContainer.style.display = 'block';
+        speedLeadValue.textContent = selectedMonster.leader_skill.amount;
+    } else {
+        speedLeadContainer.style.display = 'none';
+    }
+    
+    // Check for ATB boost skills
+    const hasAtbBoost = checkForAtbBoost(selectedMonster.skills);
+    const atbBoostContainer = document.getElementById(`${id}-atb-boost-container`);
+    const atbBoostInput = document.getElementById(`${id}-atb-boost`);
+    
+    if (hasAtbBoost) {
+        // Get the ATB boost value and set it in the input
+        const atbBoostValue = getAtbBoostValue(selectedMonster.skills);
+        atbBoostInput.value = atbBoostValue;
+        atbBoostContainer.style.display = 'block';
+    } else {
+        atbBoostInput.value = 0;
+        atbBoostContainer.style.display = 'none';
+    }
+    
+    // Handle speed buff for artifacts
     if (id === 'friendly1') {
         const hasSpeedBuff = selectedMonster.skills.some(skillId => {
             const skill = skillsData.find(s => s.id === skillId);
             return skill && skill.effects.some(effect => effect.effect.id === 5);
         });
+        
         // Get all artifact speed inputs and containers
         const artifactInputs = document.querySelectorAll('.artifact-speed input');
         const artifactContainers = document.querySelectorAll('.artifact-speed');
@@ -243,18 +284,34 @@ function updateMonster(id) {
         }
     }
     
-    //calculateTurnOrder();
+    // Recalculate and update display
     recalculateTeamSpeeds();
     updateSpeedDisplayText();
-    //checkSpeedOrder();
 }
-}
+
 
 function checkForAtbBoost(skillIds) {
     return skillIds.some(skillId => {
         const skill = skillsData.find(s => s.id === skillId);
         return skill && skill.effects.some(effect => effect.effect.name === "Increase ATB");
     });
+}
+
+function getAtbBoostValue(skillIds) {
+    if (!skillsData) return 0;
+    
+    for (const skillId of skillIds) {
+        const skill = skillsData.find(s => s.id === skillId);
+        if (!skill || !skill.effects) continue;
+        
+        for (const effect of skill.effects) {
+            if (effect.effect && effect.effect.name === "Increase ATB" && effect.quantity) {
+                return effect.quantity; // Use quantity instead of amount
+            }
+        }
+    }
+    
+    return 0;
 }
 
 function getSkillDetails(skillIds) {
@@ -438,12 +495,81 @@ function initializeDraggableCards() {
                 return a.getBoundingClientRect().left - b.getBoundingClientRect().left;
             });
             
+            // Store the current values before reordering
+            const monsterData = cardsInRow.map(c => {
+                const selectElement = c.querySelector('select');
+                const id = selectElement.id;
+                
+                return {
+                    id: id,
+                    value: selectElement.value,
+                    runeSpeed: document.getElementById(`${id}-rune-speed`)?.value || 0,
+                    artifactSpeed: document.getElementById(`${id}-artifact-speed`)?.value || 0,
+                    isSwift: document.getElementById(`${id}-swift`)?.checked || false,
+                    atbBoost: document.getElementById(`${id}-atb-boost`)?.value || 0,
+                    isSpeedLead: document.getElementById(`${id}-speedlead`)?.checked || false
+                };
+            });
+            
             // Reset positions and reorder
             cardsInRow.forEach((c, index) => {
                 c.style.left = '0px';
                 c.style.zIndex = '1';
                 row.appendChild(c);
             });
+            
+            // Update IDs to match new positions
+            const newOrderCards = Array.from(row.querySelectorAll('.monster'));
+            newOrderCards.forEach((card, index) => {
+                const newPosition = index + 1;
+                
+                // Update all element IDs within this card
+                card.querySelectorAll('[id]').forEach(element => {
+                    const currentId = element.id;
+                    const match = currentId.match(/^(friendly\d+)(.*)$/);
+                    
+                    if (match) {
+                        const suffix = match[2]; // e.g., "-rune-speed"
+                        element.id = `friendly${newPosition}${suffix}`;
+                    }
+                });
+            });
+            
+            // First update all monsters to ensure ATB boost containers are properly displayed
+            monsterData.forEach((data, index) => {
+                const newId = `friendly${index + 1}`;
+                document.getElementById(newId).value = data.value;
+                document.getElementById(`${newId}-rune-speed`).value = data.runeSpeed;
+                document.getElementById(`${newId}-artifact-speed`).value = data.artifactSpeed;
+                document.getElementById(`${newId}-swift`).checked = data.isSwift;
+                
+                // Update the monster with its new position (this will show/hide ATB boost containers)
+                updateMonster(newId);
+            });
+            
+            // Now set ATB boost and speed lead values AFTER monsters are updated
+            // This ensures the containers are visible before we try to set values
+            monsterData.forEach((data, index) => {
+                const newId = `friendly${index + 1}`;
+                
+                // Set ATB boost value if the element exists
+                const atbBoostElement = document.getElementById(`${newId}-atb-boost`);
+                if (atbBoostElement && data.atbBoost) {
+                    atbBoostElement.value = data.atbBoost;
+                    // Manually trigger the ATB boost update
+                    updateAtbBoost(newId);
+                }
+                
+                // Set speed lead value if the element exists
+                const speedLeadElement = document.getElementById(`${newId}-speedlead`);
+                if (speedLeadElement) {
+                    speedLeadElement.checked = data.isSpeedLead;
+                    // Manually trigger the speed lead update
+                    updateSpeedLead(newId);
+                }
+            });
+            
+            // Recalculate everything
             recalculateTeamSpeeds();
             updateSpeedDisplayText();
         }
@@ -451,6 +577,39 @@ function initializeDraggableCards() {
     recalculateTeamSpeeds();
     updateSpeedDisplayText();
 }
+
+
+
+
+
+
+
+// Helper function to update all element IDs within a monster card
+function updateElementIds(card, newPosition) {
+    // Get all elements with IDs within this card
+    const elementsWithIds = card.querySelectorAll('[id]');
+    
+    elementsWithIds.forEach(element => {
+        const currentId = element.id;
+        // Extract the base ID (e.g., "friendly1" from "friendly1-rune-speed")
+        const match = currentId.match(/^(friendly\d+)(.*)$/);
+        
+        if (match) {
+            const suffix = match[2]; // e.g., "-rune-speed"
+            const newId = `friendly${newPosition}${suffix}`;
+            element.id = newId;
+            
+            // Also update any for attributes in labels
+            if (element.tagName === 'INPUT') {
+                const label = card.querySelector(`label[for="${currentId}"]`);
+                if (label) {
+                    label.setAttribute('for', newId);
+                }
+            }
+        }
+    });
+}
+
 
 function updateSpeedDisplayText() {
     const monsterCards = Array.from(document.querySelectorAll('.monster'));
@@ -670,7 +829,7 @@ function recalculateTeamSpeeds() {
                 );
                 if (index == 0)
                     {
-                        // Calculating Galleon's speed
+                        // Calculating Monster 2's speed
                         monster2tunedspeed = tunedSpeed;
                         monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
                         monster2combatspeed = monster2tunedspeed + monster2rawspeed;
@@ -681,18 +840,27 @@ function recalculateTeamSpeeds() {
                     }
                 if (index === 1)
                     {
-                        //Calculating Julie's Speed
+                        //Calculating Monster 3's Speed
                         monster3tunedspeed = tunedSpeed;
                         monster3rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
                         monster3combatspeed = monster3tunedspeed + monster3rawspeed;
+                        console.log(``);
+                        console.log(`monster3combatspeed: ${monster3combatspeed}`);
+                        console.log(`monster2combatspeed: ${monster2combatspeed}`);
+                        console.log(`mon2efftick: ${mon2efftick}`);
                         boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
                         monster3tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster3combatspeed);
+                        console.log(`monster3tfnumber: ${monster3tfnumber}`);
+                        console.log(`monster2tfnumber: ${monster2tfnumber}`);
                         effectivetick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
                             if (monster3tfnumber > monster2tfnumber)
                                 {
                                     monster2newspeed = Math.ceil(((monster3tfnumber) / (mon2efftick)) - (1.15 + teamSpeedLead / 100) * monster2basespeed);
+                                    console.log(`Monster2newspeed: ${monster2newspeed}`);
                                     monster2newspeeddiff = monster2newspeed - monster2tunedspeed;
+                                    console.log(`Monster2newspeeddiff: ${monster2newspeeddiff}`);
                                     monster2newtunedspeed = monster2tunedspeed + monster2newspeeddiff;
+                                    console.log(`Monster2newtunedspeed: ${monster2newtunedspeed}`);
                                     const secondMonCard = monsterCards[1];
                                     secondMonCard.querySelector('.combat-speed').textContent = `Speed Needed: ${monster2newtunedspeed}`;
                                 }
@@ -726,12 +894,86 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeDraggableCards();
 });
 
+function resetCalculator() {
+    // Reset all select elements to their default option
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+        select.selectedIndex = 0;
+    });
+    
+    // Reset all number inputs to 0
+    const inputs = document.querySelectorAll('input[type="number"]');
+    inputs.forEach(input => {
+        input.value = 0;
+    });
+    
+    // Uncheck all checkboxes
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    // Reset state variables
+    kroaBoostTarget = 2;
+    lionelPosition = null;
+    
+    // Reset monster names and speeds
+    document.querySelectorAll('[id$="-name"]').forEach(element => {
+        element.textContent = '';
+    });
+    
+    document.querySelectorAll('[id$="-speed"]').forEach(element => {
+        element.textContent = '';
+    });
+    
+    // Reset combat speeds
+    document.querySelectorAll('.combat-speed').forEach(element => {
+        if (element.id.includes('friendly1')) {
+            element.textContent = 'Combat Speed: 0';
+        } else {
+            element.textContent = 'Speed Needed: 0';
+        }
+    });
+    
+    // Reset monster images to default
+    document.querySelectorAll('.monster-image').forEach(img => {
+        // Set to a default image or clear src
+        img.src = '';
+    });
+    
+    // Hide all special containers
+    document.querySelectorAll('[id$="-speedlead-container"], [id$="-atb-boost-container"]').forEach(container => {
+        container.style.display = 'none';
+    });
+    
+    // Remove any Kroa boost target divs
+    document.querySelectorAll('.kroa-boost-target').forEach(div => {
+        div.remove();
+    });
+    
+    // Remove any Chilling explanation text
+    document.querySelectorAll('.chilling-explanation').forEach(p => {
+        p.remove();
+    });
+    
+    // Reset artifact speed displays
+    document.querySelectorAll('.artifact-speed').forEach(container => {
+        container.style.display = 'none';
+    });
+    
+    console.log('Calculator reset complete');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     fetchAndPopulateMonsters();
     fetchSkills();
     //populateMonsterOptions();
     initializeTurnOrderListeners();
     updateSpeedDisplayText();
+    const resetButton = document.getElementById('reset-button');
+    if (resetButton) {
+        resetButton.addEventListener('click', resetCalculator);
+    }
     //calculateTurnOrder();
     //checkSpeedOrder();
 });
