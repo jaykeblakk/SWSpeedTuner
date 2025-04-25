@@ -22,6 +22,13 @@ body {
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    height: 825px; /* Adjust this value based on your needs */
+    width: 100%;
+    max-width: 350px; /* Set a consistent width */
+    box-sizing: border-box;
+    margin: 0 10px; /* Add some spacing between cards */
 }
 .monster img {
     max-width: 100px;
@@ -122,6 +129,7 @@ select, input[type="number"] {
 }
 
 .rune-speed {
+    height: 45px;
     margin-bottom: 10px;
 }
 
@@ -162,9 +170,11 @@ select, input[type="number"] {
 }
 
 .monster-special-abilities {
-    margin-top: 20px;
+    margin-top: auto;
     padding-top: 15px;
     border-top: 2px solid #ccc;
+    display: flex;
+    flex-direction: column;
 }
 
 #friendly1-speedlead-container,
@@ -173,6 +183,8 @@ select, input[type="number"] {
     border-radius: 5px;
     padding: 10px;
     margin-top: 10px;
+    margin-bottom: 10px;
+    min-height: 40px; /* Ensure consistent height */
 }
 
 #friendly2-speedlead-container,
@@ -181,6 +193,8 @@ select, input[type="number"] {
     border-radius: 5px;
     padding: 10px;
     margin-top: 10px;
+    margin-bottom: 10px;
+    min-height: 40px; /* Ensure consistent height */
 }
 
 #friendly3-speedlead-container,
@@ -189,10 +203,14 @@ select, input[type="number"] {
     border-radius: 5px;
     padding: 10px;
     margin-top: 10px;
+    margin-bottom: 10px;
+    min-height: 40px; /* Ensure consistent height */
 }
 
-.monster-image {
-    display: none;
+.monster-image{
+    display: block;
+    margin: 0 auto;
+    height: auto;
 }
 
 .monster-image[src*="icons/"] {
@@ -386,4 +404,65 @@ input[type="checkbox"] {
 
 .action-button:hover {
     background-color: #F44336; /* Lighter red on hover */
+}
+
+select option {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    padding: 10px;
+}
+
+select option:hover,
+select option:focus,
+select option:active,
+select option:checked {
+    background-color: #4CAF50;
+    color: white;
+}
+
+/* For Firefox */
+select:focus > option:checked { 
+    background-color: #4CAF50 !important;
+    color: white !important;
+}
+
+/* For Webkit browsers (Chrome, Safari) */
+select::-webkit-scrollbar {
+    width: 10px;
+}
+
+select::-webkit-scrollbar-track {
+    background: #363636;
+}
+
+select::-webkit-scrollbar-thumb {
+    background: #505050;
+    border-radius: 5px;
+}
+
+select::-webkit-scrollbar-thumb:hover {
+    background: #606060;
+}
+
+/* Modify the display property to maintain layout */
+#friendly1-speedlead-container[style*="display: none"],
+#friendly2-speedlead-container[style*="display: none"],
+#friendly3-speedlead-container[style*="display: none"],
+#friendly1-atb-boost-container[style*="display: none"],
+#friendly2-atb-boost-container[style*="display: none"],
+#friendly3-atb-boost-container[style*="display: none"] {
+    display: block !important;
+    visibility: hidden;
+    opacity: 0;
+    height: 40px; /* Same as min-height above */
+    overflow: hidden;
+}
+
+.monster:not(:first-child) .monster-special-abilities {
+    margin-top: 85px; /* Match height of rune-speed div */
+    position: relative;
+}
+
+.monster-special-abilities {
+    height: 200px;
 }

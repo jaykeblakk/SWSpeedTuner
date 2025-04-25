@@ -716,12 +716,14 @@ function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConst
     const denominator = tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration * (applyModifier ? speedModifier : 1));
     console.log(`Denominator: ${denominator}`);
     const result = numerator / denominator;
-    let speedResult = result - baseSpeed * (1.15 + leadSkill / 100);
+    let speedResult = Math.floor(result) - baseSpeed * (1.15 + leadSkill / 100);
     let swiftAdjustment = false;
     if (isSwift)
     {
         let swiftnum = speedResult % 1;
         let nonswiftnum = (baseSpeed % 4) / 4;
+        console.log(`SwiftNum: ${swiftnum}`);
+        console.log(`nonswiftNum: ${nonswiftnum}`);
         if (swiftnum > nonswiftnum)
             {
                 swiftAdjustment = true;
@@ -750,6 +752,7 @@ function recalculateTeamSpeeds() {
     const boosterAtbBoost = parseFloat(document.getElementById(`${boosterId}-atb-boost`).value) || 0;
     let isKroa = false;
     let isChilling = false;
+    const speedLeadPosition = getSpeedLeadPosition();
     
     // Simple booster speed calculation
     let boosterCombatSpeed = Math.ceil((1.15 + teamSpeedLead/100) * boosterBaseSpeed + boosterRuneSpeed);
@@ -832,18 +835,21 @@ function recalculateTeamSpeeds() {
                         // Calculating Monster 2's speed
                         monster2tunedspeed = tunedSpeed;
                         monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
-                        monster2combatspeed = monster2tunedspeed + monster2rawspeed;
+                        monster2combatspeed = Math.ceil(monster2tunedspeed + monster2rawspeed);
                         boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
                         mon2efftick = boosterTick + ((index + 1) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
                         monster2tfnumber = ((boosterTick + ((index + 1) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster2combatspeed);
                         monster2basespeed = monster.speed;
+                        if (speedLeadPosition && 2 < speedLeadPosition) {
+                            monster2tunedspeed += 1;
+                        }
                     }
                 if (index === 1)
                     {
                         //Calculating Monster 3's Speed
                         monster3tunedspeed = tunedSpeed;
                         monster3rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
-                        monster3combatspeed = monster3tunedspeed + monster3rawspeed;
+                        monster3combatspeed = Math.ceil(monster3tunedspeed + monster3rawspeed);
                         console.log(``);
                         console.log(`monster3combatspeed: ${monster3combatspeed}`);
                         console.log(`monster2combatspeed: ${monster2combatspeed}`);
@@ -853,16 +859,29 @@ function recalculateTeamSpeeds() {
                         console.log(`monster3tfnumber: ${monster3tfnumber}`);
                         console.log(`monster2tfnumber: ${monster2tfnumber}`);
                         effectivetick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
+                        if (speedLeadPosition && 3 < speedLeadPosition) {
+                            monster3tunedspeed += 1;
+                        }
                             if (monster3tfnumber > monster2tfnumber)
                                 {
+                                    let difference = (monster3tfnumber - monster2tfnumber) / mon2efftick;
+                                    let newspeed = Math.ceil(monster2combatspeed + difference) - 0.999999999;
+                                    let finalspeed = Math.ceil(newspeed - (1.15 + teamSpeedLead/100) * monster2basespeed);
+                                    let finalspeednoceil = newspeed - (1.15 + teamSpeedLead/100) * monster2basespeed;
+                                    console.log(`Final Speed No Ceil: ${finalspeednoceil}`);
+                                    /*
                                     monster2newspeed = Math.ceil(((monster3tfnumber) / (mon2efftick)) - (1.15 + teamSpeedLead / 100) * monster2basespeed);
                                     console.log(`Monster2newspeed: ${monster2newspeed}`);
                                     monster2newspeeddiff = monster2newspeed - monster2tunedspeed;
+                                    let checknum = (effectivetick / monster2newspeeddiff);
                                     console.log(`Monster2newspeeddiff: ${monster2newspeeddiff}`);
                                     monster2newtunedspeed = monster2tunedspeed + monster2newspeeddiff;
-                                    console.log(`Monster2newtunedspeed: ${monster2newtunedspeed}`);
+                                    console.log(`Monster2newtunedspeed: ${monster2newtunedspeed}`);*/
                                     const secondMonCard = monsterCards[1];
-                                    secondMonCard.querySelector('.combat-speed').textContent = `Speed Needed: ${monster2newtunedspeed}`;
+                                    if (speedLeadPosition && 2 < speedLeadPosition) {
+                                        finalspeed += 1;
+                                    }
+                                    secondMonCard.querySelector('.combat-speed').textContent = `Speed Needed: ${finalspeed}`;
                                 }
                     }
                 card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
@@ -893,6 +912,16 @@ function getBoosterEffectTypes(boosterId) {
 document.addEventListener('DOMContentLoaded', function() {
     initializeDraggableCards();
 });
+
+function getSpeedLeadPosition() {
+    for (let i = 1; i <= 3; i++) {
+        const speedLeadCheckbox = document.getElementById(`friendly${i}-speedlead`);
+        if (speedLeadCheckbox && speedLeadCheckbox.checked) {
+            return i;
+        }
+    }
+    return null;
+}
 
 function resetCalculator() {
     // Reset all select elements to their default option
