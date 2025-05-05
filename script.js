@@ -674,7 +674,9 @@ function getEffectsByPosition() {
     
     monsterCards.forEach((card, index) => {
         const monsterId = card.querySelector('select').id;
-        const monster = getMonsterDetails(document.getElementById(monsterId).value);
+        const monsterSelect = document.getElementById(monsterId); // Get the select element
+        const isMonster2A = monsterSelect.options[monsterSelect.selectedIndex].text.includes('(2A)'); // Check if 2A
+        const monster = getMonsterDetails(monsterSelect.value, isMonster2A); // Pass is2A flag
         const hasSpeedBuff = monster.skills.some(skillId => {
             const skill = skillsData.find(s => s.id === skillId);
             return skill && skill.effects.some(effect => effect.effect.id === 5);
@@ -746,7 +748,9 @@ function recalculateTeamSpeeds() {
     // Get booster's stats
     const boosterCard = monsterCards[0];
     const boosterId = boosterCard.querySelector('select').id;
-    const boosterMonster = getMonsterDetails(document.getElementById(boosterId).value);
+    const boosterSelect = document.getElementById(boosterId); // Get the select element
+    const isBooster2A = boosterSelect.options[boosterSelect.selectedIndex].text.includes('(2A)'); // Check if 2A
+    const boosterMonster = getMonsterDetails(boosterSelect.value, isBooster2A); // Pass is2A flag
     let boosterBaseSpeed = boosterMonster ? boosterMonster.speed : 0;
     const boosterRuneSpeed = parseInt(document.getElementById(`${boosterId}-rune-speed`).value) || 0;
     const boosterAtbBoost = parseFloat(document.getElementById(`${boosterId}-atb-boost`).value) || 0;
@@ -788,7 +792,9 @@ function recalculateTeamSpeeds() {
     const firstSpeedBuffPosition = effectsByPosition.findIndex(e => e.hasSpeedBuff);
         monsterCards.slice(1).forEach((card, index) => {
             const monsterId = card.querySelector('select').id;
-            const monster = getMonsterDetails(document.getElementById(monsterId).value);
+            const monsterSelect = document.getElementById(monsterId); // Get the select element
+            const isMonster2A = monsterSelect.options[monsterSelect.selectedIndex].text.includes('(2A)'); // Check if 2A
+            const monster = getMonsterDetails(monsterSelect.value, isMonster2A); // Pass is2A flag
             if (!monster) return;
             const artiSpeed = parseFloat(document.getElementById(`${monsterId}-artifact-speed`).value) || 0;
             const currentPosition = index + 1;
