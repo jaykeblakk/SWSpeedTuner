@@ -1,51 +1,3 @@
-/*function fetchAndPopulateMonsters() {
-    const config = {
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-    };
-
-    axios.get('https://localhost:3000/api/v2/skills/', config)
-        .then(response => {
-            console.log('Full API Response:', response);
-            console.log('Skills:', response.data);
-            populateDropdowns(response.data);
-        })
-        .catch(error => {
-            console.log('Error:', error);
-        });
-}
-
-function populateDropdowns(monsters) {
-    const selects = document.querySelectorAll('select');
-    selects.forEach(select => {
-        // Clear existing options except the default "Select Monster" option
-        select.innerHTML = '<option value="">Select Monster</option>';
-
-        // Add new options from the fetched data
-        monsters.forEach(monster => {
-            const option = document.createElement('option');
-            option.value = monster.id;
-            option.textContent = monster.name;
-            select.appendChild(option);
-        });
-    });
-}*/
-
-// Populate monster options
-/*function populateMonsterOptions() {
-    const selects = document.querySelectorAll('select');
-    selects.forEach(select => {
-        for (const [key, monster] of Object.entries(monsters)) {
-            const option = document.createElement('option');
-            option.value = key;
-            option.textContent = monster.name;
-            select.appendChild(option);
-        }
-    });
-}*/
-//ABOVE CODE IS NEEDED TO UPDATE MONSTER INFORMATION WHEN NEW MONSTERS ARE RELEASED. DO NOT DELETE.
 let monsterData = null;
 let skillsData = null;
 let SPDBoostConstant = 0.3;
@@ -62,15 +14,6 @@ function checkForMiriam() {
     
     SPDBoostConstant = hasMiriam ? 0.405 : 0.3;
 }
-
-
-// Load the JSON data
-fetch('./monsters.json')
-    .then(response => response.json())
-    .then(data => {
-        monsterData = data;
-        populateDropdowns(data);
-    });
 
 function fetchSkills() {
     fetch('./skills.json')
@@ -126,7 +69,11 @@ function fetchAndPopulateMonsters() {
         .then(response => response.json())
         .then(monsters => {
             // Filter monsters to only include those with obtainable set to true
-            const filteredMonsters = monsters.filter(monster => monster.obtainable === true);
+            const filteredMonsters = monsters.filter(monster => 
+    monster.obtainable === true && 
+    monster.archetype !== "Material"
+);
+
             
             console.log(`Using ${filteredMonsters.length} obtainable monsters from total ${monsters.length}`);
             
