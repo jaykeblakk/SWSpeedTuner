@@ -155,6 +155,13 @@ function updateMonster(id) {
     // Get the current monster card
     const monsterCard = select.closest('.monster');
     
+    // Get the special abilities div
+    const specialAbilitiesDiv = monsterCard.querySelector('.monster-special-abilities');
+    if (!specialAbilitiesDiv) {
+        console.error('Special abilities div not found');
+        return;
+    }
+    
     // Find or create Kroa boost target div for this specific monster card
     let kroaTargetDiv = monsterCard.querySelector('.kroa-boost-target');
     if (!kroaTargetDiv) {
@@ -174,13 +181,7 @@ function updateMonster(id) {
             </label>
         `;
         // Add it to the monster's special abilities section
-        const specialAbilitiesDiv = monsterCard.querySelector('.monster-special-abilities');
-        if (specialAbilitiesDiv) {
-            specialAbilitiesDiv.appendChild(kroaTargetDiv);
-        } else {
-            // If no special abilities div, add it directly to the monster card
-            monsterCard.appendChild(kroaTargetDiv);
-        }
+        specialAbilitiesDiv.appendChild(kroaTargetDiv);
     }
     
     // Show/hide Kroa boost target div based on whether this monster is Kroa
@@ -199,7 +200,51 @@ function updateMonster(id) {
         kroaTargetDiv.style.display = 'none';
     }
     
-        // Remove any existing Chilling explanation text
+    // Remove any existing Kahli skill selection
+    const existingKahliSkill = monsterCard.querySelector('.kahli-skill-selection');
+    if (existingKahliSkill) {
+        existingKahliSkill.remove();
+    }
+    
+    // Add Kahli skill selection if this is Kahli
+    if (selectedMonster.name === 'Kahli') {
+        const kahliSkillDiv = document.createElement('div');
+        kahliSkillDiv.className = 'kahli-skill-selection';
+        kahliSkillDiv.style.marginBottom = '10px';
+        kahliSkillDiv.innerHTML = `
+            <p>Skill Used:</p>
+            <label>
+                <input type="radio" name="kahli-skill-${id}" value="2" checked>
+                Skill 2 (No Buff)
+            </label>
+            <p></p>
+            <label>
+                <input type="radio" name="kahli-skill-${id}" value="3">
+                Skill 3 (Speed Buff)
+            </label>
+            <div class="tooltip-container">
+                <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                <span class="tooltip-text">Select which skill Kahli will use. Skill 3 applies a speed buff to subsequent monsters.</span>
+            </div>
+        `;
+        
+        // Insert at the beginning of the special abilities div
+        if (specialAbilitiesDiv.firstChild) {
+            specialAbilitiesDiv.insertBefore(kahliSkillDiv, specialAbilitiesDiv.firstChild);
+        } else {
+            specialAbilitiesDiv.appendChild(kahliSkillDiv);
+        }
+        
+        // Add event listeners to the radio buttons
+        kahliSkillDiv.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                recalculateTeamSpeeds();
+                updateSpeedDisplayText();
+            });
+        });
+    }
+    
+    // Remove any existing Chilling explanation text
     const existingExplanation = monsterCard.querySelector('.chilling-explanation');
     if (existingExplanation) {
         existingExplanation.remove();
@@ -244,14 +289,25 @@ function updateMonster(id) {
         speedLeadContainer.style.display = 'none';
     }
     
-    // Check for ATB boost skills
-    const hasAtbBoost = checkForAtbBoost(selectedMonster.skills);
+    // Check for ATB boost skills - UPDATED WITH YEONHONG EXCEPTION
+    const isYeonhong = selectedMonster.name === "Yeonhong";
+    const isCraig = selectedMonster.name === "Craig";
+    const isMBisonLight = selectedMonster.name === "M. Bison" && selectedMonster.element === "Light";
+    const hasAtbBoost = checkForAtbBoost(selectedMonster.skills, isYeonhong);
     const atbBoostContainer = document.getElementById(`${id}-atb-boost-container`);
     const atbBoostInput = document.getElementById(`${id}-atb-boost`);
-    
-    if (hasAtbBoost) {
+
+    if (hasAtbBoost || isCraig || isMBisonLight) {
         // Get the ATB boost value and set it in the input
-        const atbBoostValue = getAtbBoostValue(selectedMonster.skills);
+        let atbBoostValue = 0;
+
+        if (isCraig || isMBisonLight) {
+            // Set Craig's and M. Bison (Light)'s default ATB boost to 40
+            atbBoostValue = 40;
+        } else {
+            atbBoostValue = getAtbBoostValue(selectedMonster.skills, isYeonhong);
+        }
+
         atbBoostInput.value = atbBoostValue;
         atbBoostContainer.style.display = 'block';
     } else {
@@ -290,14 +346,8 @@ function updateMonster(id) {
 }
 
 
-function checkForAtbBoost(skillIds) {
-    return skillIds.some(skillId => {
-        const skill = skillsData.find(s => s.id === skillId);
-        return skill && skill.effects.some(effect => effect.effect.name === "Increase ATB");
-    });
-}
 
-function getAtbBoostValue(skillIds) {
+function getAtbBoostValue(skillIds, isYeonhong = false) {
     if (!skillsData) return 0;
     
     for (const skillId of skillIds) {
@@ -305,14 +355,45 @@ function getAtbBoostValue(skillIds) {
         if (!skill || !skill.effects) continue;
         
         for (const effect of skill.effects) {
-            if (effect.effect && effect.effect.name === "Increase ATB" && effect.quantity) {
-                return effect.quantity; // Use quantity instead of amount
+            const isAtbBoost = (effect.effect.id === 17 || effect.effect.name === "Increase ATB");
+            
+            // For Yeonhong, include the ATB boost even if it's self-only
+            if (isYeonhong && isAtbBoost && effect.quantity) {
+                return effect.quantity;
+            }
+            
+            // For other monsters, only include if it's not self-only
+            if (isAtbBoost && !effect.self_effect && effect.quantity) {
+                return effect.quantity;
             }
         }
     }
     
     return 0;
 }
+
+
+
+
+
+function checkForAtbBoost(skillIds, isYeonhong = false) {
+    return skillIds.some(skillId => {
+        const skill = skillsData.find(s => s.id === skillId);
+        if (!skill || !skill.effects) return false;
+        
+        return skill.effects.some(effect => {
+            // Check if it's an ATB boost effect
+            const isAtbBoost = (effect.effect.id === 17 || effect.effect.name === "Increase ATB");
+            
+            // For Yeonhong, include the ATB boost even if it's self-only
+            if (isYeonhong && isAtbBoost) return true;
+            
+            // For other monsters, only include if it's not self-only
+            return isAtbBoost && !effect.self_effect;
+        });
+    });
+}
+
 
 function getSkillDetails(skillIds) {
     return skillIds.map(skillId => {
@@ -789,13 +870,37 @@ function getEffectsByPosition() {
     
     monsterCards.forEach((card, index) => {
         const monsterId = card.querySelector('select').id;
-        const monsterSelect = document.getElementById(monsterId); // Get the select element
-        const isMonster2A = monsterSelect.options[monsterSelect.selectedIndex].text.includes('(2A)'); // Check if 2A
-        const monster = getMonsterDetails(monsterSelect.value, isMonster2A); // Pass is2A flag
-        const hasSpeedBuff = monster.skills.some(skillId => {
-            const skill = skillsData.find(s => s.id === skillId);
-            return skill && skill.effects.some(effect => effect.effect.id === 5);
-        });
+        const monsterSelect = document.getElementById(monsterId);
+        const isMonster2A = monsterSelect.options[monsterSelect.selectedIndex].text.includes('(2A)');
+        const monster = getMonsterDetails(monsterSelect.value, isMonster2A);
+        
+        if (!monster) {
+            effects.push({
+                position: index,
+                hasSpeedBuff: false,
+                atbBoost: 0
+            });
+            return;
+        }
+        
+        let hasSpeedBuff = false;
+        
+        // Special case for Kahli
+        if (monster.name === 'Kahli') {
+            // Check which skill is selected
+            const kahliSkillRadios = card.querySelectorAll('input[name^="kahli-skill-"]');
+            const selectedSkill = Array.from(kahliSkillRadios).find(radio => radio.checked)?.value;
+            
+            // Only apply speed buff if Skill 3 is selected
+            hasSpeedBuff = selectedSkill === '3';
+        } else {
+            // Normal case for other monsters
+            hasSpeedBuff = monster.skills.some(skillId => {
+                const skill = skillsData.find(s => s.id === skillId);
+                return skill && skill.effects.some(effect => effect.effect.id === 5);
+            });
+        }
+        
         const atbBoost = parseFloat(document.getElementById(`${monsterId}-atb-boost`).value) || 0;
         
         effects.push({
@@ -807,6 +912,7 @@ function getEffectsByPosition() {
     
     return effects;
 }
+
 
 function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true, isChilling = false) {
     console.log(``);
@@ -974,6 +1080,7 @@ function recalculateTeamSpeeds() {
             // Rest of the existing code for Monster 2 and 3 calculations...
             if (index == 0) {
                 // Calculating Monster 2's speed
+                console.log(`Monster: ${monster.name}`);
                 monster2tunedspeed = tunedSpeed;
                 monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
                 monster2combatspeed = Math.ceil(monster2tunedspeed + monster2rawspeed);
@@ -987,6 +1094,7 @@ function recalculateTeamSpeeds() {
             }
             if (index === 1) {
                 // Existing Monster 3 calculations...
+                console.log(`Monster: ${monster.name}`);
                 monster3tunedspeed = tunedSpeed;
                 monster3rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
                 monster3combatspeed = Math.ceil(monster3tunedspeed + monster3rawspeed);
@@ -1099,7 +1207,7 @@ function resetCalculator() {
     // Reset monster images to default
     document.querySelectorAll('.monster-image').forEach(img => {
         // Set to a default image or clear src
-        img.src = '';
+        img.src = 'summonericon.png';
     });
     
     // Hide all special containers
@@ -1120,6 +1228,11 @@ function resetCalculator() {
     // Reset artifact speed displays
     document.querySelectorAll('.artifact-speed').forEach(container => {
         container.style.display = 'none';
+    });
+    
+    // Remove any Kahli skill selection divs
+    document.querySelectorAll('.kahli-skill-selection').forEach(div => {
+    div.remove();
     });
     
     console.log('Calculator reset complete');
