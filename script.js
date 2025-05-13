@@ -15,6 +15,15 @@ function checkForMiriam() {
     SPDBoostConstant = hasMiriam ? 0.405 : 0.3;
 }
 
+
+// Load the JSON data
+fetch('./monsters.json')
+    .then(response => response.json())
+    .then(data => {
+        monsterData = data;
+        populateDropdowns(data);
+    });
+
 function fetchSkills() {
     fetch('./skills.json')
         .then(response => response.json())
