@@ -442,7 +442,7 @@ function getSpeedLead(team) {
     return Math.max(...speedLeads);
 }
 
-function initializeDraggableCards() {
+/*function initializeDraggableCards() {
     const cards = document.querySelectorAll('.monster');
     
     cards.forEach(card => {
@@ -576,7 +576,122 @@ function initializeDraggableCards() {
     });
     recalculateTeamSpeeds();
     updateSpeedDisplayText();
+}*/
+
+function initializeDraggableCards() {
+    const row = document.querySelector('.team.friendly');
+    const cards = row.querySelectorAll('.monster');
+
+    cards.forEach(card => {
+        let isDragging = false;
+        let offsetX = 0;
+        let offsetY = 0;
+        let placeholder = null;
+
+        card.addEventListener('mousedown', function(e) {
+            if (e.target.tagName === 'SELECT' || 
+                e.target.tagName === 'INPUT' || 
+                e.target.tagName === 'LABEL' ||
+                e.target.tagName === 'BUTTON' ||
+                e.target.classList.contains('tooltip-icon') ||
+                e.target.closest('select, input, label, button, .tooltip-icon')) {
+                return;
+            }
+
+            e.preventDefault();
+            isDragging = true;
+
+            // Get the card's bounding box relative to the page
+            const cardRect = card.getBoundingClientRect();
+            offsetX = e.pageX - cardRect.left;
+            offsetY = e.pageY - cardRect.top;
+
+            // Create a placeholder
+            placeholder = document.createElement('div');
+            placeholder.className = 'monster placeholder';
+            placeholder.style.width = `${card.offsetWidth}px`;
+            placeholder.style.height = `${card.offsetHeight}px`;
+            placeholder.style.border = '2px dashed #666';
+            placeholder.style.boxSizing = 'border-box';
+            row.insertBefore(placeholder, card.nextSibling);
+
+            // Prepare card for dragging
+            card.style.position = 'absolute';
+            card.style.width = `${card.offsetWidth}px`;
+            card.style.height = `${card.offsetHeight}px`;
+            card.style.zIndex = '1000';
+            card.style.pointerEvents = 'none';
+            card.classList.add('dragging');
+
+            moveAt(e.pageX, e.pageY);
+
+            document.addEventListener('mousemove', mouseMove);
+            document.addEventListener('mouseup', mouseUp);
+        });
+
+        function moveAt(pageX, pageY) {
+            card.style.left = `${pageX - offsetX - row.getBoundingClientRect().left}px`;
+            card.style.top = `${pageY - offsetY - row.getBoundingClientRect().top}px`;
+        }
+
+        function mouseMove(e) {
+            if (!isDragging) return;
+
+            moveAt(e.pageX, e.pageY);
+
+            const cardsArray = Array.from(row.querySelectorAll('.monster:not(.dragging):not(.placeholder)'));
+            let inserted = false;
+
+            for (const otherCard of cardsArray) {
+                const rect = otherCard.getBoundingClientRect();
+                const middle = rect.left + rect.width / 2;
+
+                if (e.clientX < middle) {
+                    row.insertBefore(placeholder, otherCard);
+                    inserted = true;
+                    break;
+                }
+            }
+
+            if (!inserted) {
+                row.appendChild(placeholder);
+            }
+        }
+
+
+        function mouseUp() {
+            if (!isDragging) return;
+            isDragging = false;
+
+            document.removeEventListener('mousemove', mouseMove);
+            document.removeEventListener('mouseup', mouseUp);
+
+            // Reset card styles
+            card.style.position = '';
+            card.style.left = '';
+            card.style.top = '';
+            card.style.width = '';
+            card.style.height = '';
+            card.style.zIndex = '';
+            card.style.pointerEvents = '';
+            card.classList.remove('dragging');
+
+            // Insert card in placeholder position
+            row.insertBefore(card, placeholder);
+            placeholder.remove();
+            placeholder = null;
+
+            recalculateTeamSpeeds();
+            updateSpeedDisplayText();
+        }
+    });
 }
+
+
+
+
+
+
 
 
 
@@ -748,9 +863,9 @@ function recalculateTeamSpeeds() {
     // Get booster's stats
     const boosterCard = monsterCards[0];
     const boosterId = boosterCard.querySelector('select').id;
-    const boosterSelect = document.getElementById(boosterId); // Get the select element
-    const isBooster2A = boosterSelect.options[boosterSelect.selectedIndex].text.includes('(2A)'); // Check if 2A
-    const boosterMonster = getMonsterDetails(boosterSelect.value, isBooster2A); // Pass is2A flag
+    const boosterSelect = document.getElementById(boosterId);
+    const isBooster2A = boosterSelect.options[boosterSelect.selectedIndex].text.includes('(2A)');
+    const boosterMonster = getMonsterDetails(boosterSelect.value, isBooster2A);
     let boosterBaseSpeed = boosterMonster ? boosterMonster.speed : 0;
     const boosterRuneSpeed = parseInt(document.getElementById(`${boosterId}-rune-speed`).value) || 0;
     const boosterAtbBoost = parseFloat(document.getElementById(`${boosterId}-atb-boost`).value) || 0;
@@ -760,26 +875,25 @@ function recalculateTeamSpeeds() {
     
     // Simple booster speed calculation
     let boosterCombatSpeed = Math.ceil((1.15 + teamSpeedLead/100) * boosterBaseSpeed + boosterRuneSpeed);
-    if (boosterMonster.name === "Chilling")
-        {
-            boosterCombatSpeed = boosterCombatSpeed + 40;
-            isChilling = true;
-        }
-    if (boosterMonster.name === "Kroa")
-        {
-            isKroa = true;
-        }
+    if (boosterMonster.name === "Chilling") {
+        boosterCombatSpeed = boosterCombatSpeed + 40;
+        isChilling = true;
+    }
+    if (boosterMonster.name === "Kroa") {
+        isKroa = true;
+    }
     boosterCard.querySelector('.combat-speed').textContent = `Combat Speed: ${boosterCombatSpeed}`;
     
     const boosterEffects = getBoosterEffectTypes(boosterId);
-    applyModifier = false;
+    let applyModifier = false;
     if (boosterEffects.includes(5)){
         applyModifier = true;
     }
     else{
         applyModifier = false;
     }
-        // Calculate tuned speeds for followers using booster's ATB boost
+    
+    // Calculate tuned speeds for followers using booster's ATB boost
     monster2tunedspeed = null;
     monster3tunedspeed = null;
     monster2combatspeed = null;
@@ -788,26 +902,47 @@ function recalculateTeamSpeeds() {
     monster3tfnumber = null;
     monster2basespeed = null;
     mon2efftick = null;
+    
+    // Get effects by position using the existing function
     const effectsByPosition = getEffectsByPosition();
-    const firstSpeedBuffPosition = effectsByPosition.findIndex(e => e.hasSpeedBuff);
-        monsterCards.slice(1).forEach((card, index) => {
-            const monsterId = card.querySelector('select').id;
-            const monsterSelect = document.getElementById(monsterId); // Get the select element
-            const isMonster2A = monsterSelect.options[monsterSelect.selectedIndex].text.includes('(2A)'); // Check if 2A
-            const monster = getMonsterDetails(monsterSelect.value, isMonster2A); // Pass is2A flag
-            if (!monster) return;
-            const artiSpeed = parseFloat(document.getElementById(`${monsterId}-artifact-speed`).value) || 0;
-            const currentPosition = index + 1;
-            const speedBuffActive = firstSpeedBuffPosition !== -1 && currentPosition >= firstSpeedBuffPosition;
-            const thisMonsterPosition = parseInt(monsterId.replace('friendly', ''));
-            let accumulatedAtbBoost = getAccumulatedAtbBoost(index, thisMonsterPosition);
-            
-            const isSwift = document.getElementById(`${monsterId}-swift`).checked;
-            if (isKroa) {
-                console.log(``);
-                console.log(`Monster: ${monster.name}`);
-                accumulatedAtbBoost = (currentPosition === kroaBoostTarget - 1) ? accumulatedAtbBoost : 0;
-                let tunedSpeed = calculateTunedSpeed(
+    
+    monsterCards.slice(1).forEach((card, index) => {
+        const monsterId = card.querySelector('select').id;
+        const monsterSelect = document.getElementById(monsterId);
+        const isMonster2A = monsterSelect.options[monsterSelect.selectedIndex].text.includes('(2A)');
+        const monster = getMonsterDetails(monsterSelect.value, isMonster2A);
+        if (!monster) return;
+        
+        const artiSpeed = parseFloat(document.getElementById(`${monsterId}-artifact-speed`).value) || 0;
+        const currentPosition = index + 1;
+        const thisMonsterPosition = parseInt(monsterId.replace('friendly', ''));
+        let accumulatedAtbBoost = getAccumulatedAtbBoost(index, thisMonsterPosition);
+        
+        // Determine if speed buff is active for this monster
+        let speedBuffActive = false;
+        
+        // If Monster 1 has speed buff, it applies to all
+        if (applyModifier) {
+            speedBuffActive = true;
+        } else {
+            // Check if any monster before this one has a speed buff
+            // For Monster 2 (index 0), only Monster 1's buff would apply
+            // For Monster 3 (index 1), both Monster 1 and 2's buffs could apply
+            for (let i = 0; i < currentPosition; i++) {
+                if (effectsByPosition[i] && effectsByPosition[i].hasSpeedBuff) {
+                    speedBuffActive = true;
+                    break;
+                }
+            }
+        }
+        
+        const isSwift = document.getElementById(`${monsterId}-swift`).checked;
+        
+        if (isKroa) {
+            console.log(``);
+            console.log(`Monster: ${monster.name}`);
+            accumulatedAtbBoost = (currentPosition === kroaBoostTarget - 1) ? accumulatedAtbBoost : 0;
+            let tunedSpeed = calculateTunedSpeed(
                 teamSpeedLead,
                 boosterBaseSpeed,
                 boosterRuneSpeed,
@@ -819,81 +954,72 @@ function recalculateTeamSpeeds() {
                 isSwift,
                 speedBuffActive,
                 isChilling
-                );
-                card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+            );
+            card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+        } else {
+            let tunedSpeed = calculateTunedSpeed(
+                teamSpeedLead,
+                boosterBaseSpeed,
+                boosterRuneSpeed,
+                0.0007,
+                index + 1,
+                accumulatedAtbBoost,
+                artiSpeed,
+                monster.speed,
+                isSwift,
+                speedBuffActive,
+                isChilling
+            );
+            
+            // Rest of the existing code for Monster 2 and 3 calculations...
+            if (index == 0) {
+                // Calculating Monster 2's speed
+                monster2tunedspeed = tunedSpeed;
+                monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
+                monster2combatspeed = Math.ceil(monster2tunedspeed + monster2rawspeed);
+                boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
+                mon2efftick = boosterTick + ((index + 1) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
+                monster2tfnumber = ((boosterTick + ((index + 1) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster2combatspeed);
+                monster2basespeed = monster.speed;
+                if (speedLeadPosition && 2 < speedLeadPosition) {
+                    monster2tunedspeed += 1;
+                }
             }
-            else{
-                let tunedSpeed = calculateTunedSpeed(
-                    teamSpeedLead,
-                    boosterBaseSpeed,
-                    boosterRuneSpeed,
-                    0.0007,
-                    index + 1,
-                    accumulatedAtbBoost,
-                    artiSpeed,
-                    monster.speed,
-                    isSwift,
-                    speedBuffActive,
-                    isChilling
-                );
-                if (index == 0)
-                    {
-                        // Calculating Monster 2's speed
-                        monster2tunedspeed = tunedSpeed;
-                        monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
-                        monster2combatspeed = Math.ceil(monster2tunedspeed + monster2rawspeed);
-                        boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
-                        mon2efftick = boosterTick + ((index + 1) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
-                        monster2tfnumber = ((boosterTick + ((index + 1) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster2combatspeed);
-                        monster2basespeed = monster.speed;
-                        if (speedLeadPosition && 2 < speedLeadPosition) {
-                            monster2tunedspeed += 1;
-                        }
+            if (index === 1) {
+                // Existing Monster 3 calculations...
+                monster3tunedspeed = tunedSpeed;
+                monster3rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
+                monster3combatspeed = Math.ceil(monster3tunedspeed + monster3rawspeed);
+                console.log(``);
+                console.log(`monster3combatspeed: ${monster3combatspeed}`);
+                console.log(`monster2combatspeed: ${monster2combatspeed}`);
+                console.log(`mon2efftick: ${mon2efftick}`);
+                boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
+                monster3tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster3combatspeed);
+                console.log(`monster3tfnumber: ${monster3tfnumber}`);
+                console.log(`monster2tfnumber: ${monster2tfnumber}`);
+                effectivetick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
+                if (speedLeadPosition && 3 < speedLeadPosition) {
+                    monster3tunedspeed += 1;
+                }
+                if (monster3tfnumber > monster2tfnumber) {
+                    let difference = (monster3tfnumber - monster2tfnumber) / mon2efftick;
+                    let newspeed = Math.ceil(monster2combatspeed + difference) - 0.999999999;
+                    let finalspeed = Math.ceil(newspeed - (1.15 + teamSpeedLead/100) * monster2basespeed);
+                    let finalspeednoceil = newspeed - (1.15 + teamSpeedLead/100) * monster2basespeed;
+                    console.log(`Final Speed No Ceil: ${finalspeednoceil}`);
+                    const secondMonCard = monsterCards[1];
+                    if (speedLeadPosition && 2 < speedLeadPosition) {
+                        finalspeed += 1;
                     }
-                if (index === 1)
-                    {
-                        //Calculating Monster 3's Speed
-                        monster3tunedspeed = tunedSpeed;
-                        monster3rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
-                        monster3combatspeed = Math.ceil(monster3tunedspeed + monster3rawspeed);
-                        console.log(``);
-                        console.log(`monster3combatspeed: ${monster3combatspeed}`);
-                        console.log(`monster2combatspeed: ${monster2combatspeed}`);
-                        console.log(`mon2efftick: ${mon2efftick}`);
-                        boosterTick = Math.ceil(1 / (boosterCombatSpeed * 0.0007));
-                        monster3tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster3combatspeed);
-                        console.log(`monster3tfnumber: ${monster3tfnumber}`);
-                        console.log(`monster2tfnumber: ${monster2tfnumber}`);
-                        effectivetick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
-                        if (speedLeadPosition && 3 < speedLeadPosition) {
-                            monster3tunedspeed += 1;
-                        }
-                            if (monster3tfnumber > monster2tfnumber)
-                                {
-                                    let difference = (monster3tfnumber - monster2tfnumber) / mon2efftick;
-                                    let newspeed = Math.ceil(monster2combatspeed + difference) - 0.999999999;
-                                    let finalspeed = Math.ceil(newspeed - (1.15 + teamSpeedLead/100) * monster2basespeed);
-                                    let finalspeednoceil = newspeed - (1.15 + teamSpeedLead/100) * monster2basespeed;
-                                    console.log(`Final Speed No Ceil: ${finalspeednoceil}`);
-                                    /*
-                                    monster2newspeed = Math.ceil(((monster3tfnumber) / (mon2efftick)) - (1.15 + teamSpeedLead / 100) * monster2basespeed);
-                                    console.log(`Monster2newspeed: ${monster2newspeed}`);
-                                    monster2newspeeddiff = monster2newspeed - monster2tunedspeed;
-                                    let checknum = (effectivetick / monster2newspeeddiff);
-                                    console.log(`Monster2newspeeddiff: ${monster2newspeeddiff}`);
-                                    monster2newtunedspeed = monster2tunedspeed + monster2newspeeddiff;
-                                    console.log(`Monster2newtunedspeed: ${monster2newtunedspeed}`);*/
-                                    const secondMonCard = monsterCards[1];
-                                    if (speedLeadPosition && 2 < speedLeadPosition) {
-                                        finalspeed += 1;
-                                    }
-                                    secondMonCard.querySelector('.combat-speed').textContent = `Speed Needed: ${finalspeed}`;
-                                }
-                    }
-                card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+                    secondMonCard.querySelector('.combat-speed').textContent = `Speed Needed: ${finalspeed}`;
+                }
             }
-        });
+            card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+        }
+    });
 }
+
 
 function getBoosterEffectTypes(boosterId) {
     const boosterMonster = getMonsterDetails(document.getElementById(boosterId).value);

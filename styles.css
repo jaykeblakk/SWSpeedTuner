@@ -466,3 +466,31 @@ select::-webkit-scrollbar-thumb:hover {
 .monster-special-abilities {
     height: 200px;
 }
+
+
+
+.monster {
+  transition: transform 200ms ease, left 200ms ease, top 200ms ease;
+}
+
+
+
+/* Styling for draggable cards */
+.monster {
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.2s ease-in-out;
+}
+
+.monster.dragging {
+    opacity: 0.8;
+    cursor: grabbing;
+}
+
+.team.friendly {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+}
+
+
