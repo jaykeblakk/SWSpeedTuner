@@ -375,14 +375,64 @@ input[type="checkbox"] {
     display: block;
 }
 
+/* Mobile-Friendly Enhancements */
 @media (max-width: 768px) {
-    .team {
-        flex-direction: column;
-    }
-    
-    .monster {
-        margin-bottom: 20px;
-    }
+  .team {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .monster {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  input,
+  select {
+    font-size: 16px;
+    min-height: 44px; /* Mobile tap target */
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+
+  .monster {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .combat-speed {
+    font-size: 1em;
+  }
+}
+
+/* General improvements */
+select,
+input,
+img,
+p {
+  max-width: 100%;
+  box-sizing: border-box;
+  word-break: break-word;
+}
+
+/* Disable drag on touch devices (optional) */
+@media (hover: none) and (pointer: coarse) {
+  .monster {
+    cursor: default !important;
+  }
 }
 
 .action-buttons {
@@ -491,6 +541,132 @@ select::-webkit-scrollbar-thumb:hover {
     position: relative;
     display: flex;
     justify-content: space-between;
+}
+
+/* Dark mode styling for Tom Select */
+.ts-wrapper {
+  background-color: #363636;
+  border: 1px solid #505050;
+  color: #e0e0e0;
+  border-radius: 4px;
+  font-family: 'Leelawadee UI', 'Segoe UI', sans-serif;
+  font-size: 16px;
+}
+
+.ts-control {
+  background-color: #363636;
+  color: #e0e0e0;
+  min-height: 44px;
+  padding: 8px;
+}
+
+.ts-dropdown {
+  background-color: #2d2d2d;
+  border: 1px solid #505050;
+  color: #e0e0e0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.ts-dropdown .option {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.ts-dropdown .option:hover,
+.ts-dropdown .option.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.ts-wrapper.single.has-items .ts-control {
+  background-color: #363636;
+  color: #e0e0e0;
+}
+
+/* Deep styling for Tom Select dropdown list */
+.ts-dropdown {
+  background-color: #2d2d2d;
+  border: 1px solid #505050;
+  color: #e0e0e0;
+  font-family: 'Leelawadee UI', 'Segoe UI', sans-serif;
+  font-size: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  z-index: 10000; /* keep above everything else */
+}
+
+.ts-dropdown .option {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #404040;
+}
+
+.ts-dropdown .option:last-child {
+  border-bottom: none;
+}
+
+.ts-dropdown .option:hover,
+.ts-dropdown .option.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+/* Hide default selects until ready */
+.monster-select {
+  visibility: hidden;
+}
+
+/* Once Tom Select replaces it, show it */
+.ts-wrapper {
+  visibility: visible;
+}
+
+/*  Dropdown list container */
+.ts-dropdown {
+  background-color: #2d2d2d !important;
+  border: 1px solid #505050;
+  color: #ffffff;
+}
+
+/*  Individual dropdown items */
+.ts-dropdown .option {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+  padding: 10px 12px;
+  border-bottom: 1px solid #404040;
+}
+
+/* Hover & active item styling */
+.ts-dropdown .option:hover,
+.ts-dropdown .option.active {
+  background-color: #4CAF50 !important;
+  color: white !important;
+}
+
+/*  Base styling for the control box */
+.ts-wrapper.single .ts-control {
+  background-color: #363636 !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #505050 !important;
+}
+
+/*  When the dropdown is focused (clicked or typed into) */
+.ts-wrapper.single.focus .ts-control {
+  background-color: #363636 !important;
+  color: #e0e0e0 !important;
+  border-color: #4CAF50 !important; /* Optional green border to show focus */
+}
+
+/*  Also protect the item inside from switching style */
+.ts-wrapper.single.focus .ts-control .item {
+  background-color: #363636 !important;
+  color: #e0e0e0 !important;
+}
+
+.ts-control input {
+  color: #ffffff !important;
+  background-color: transparent !important;
 }
 
 

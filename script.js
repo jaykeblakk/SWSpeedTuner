@@ -17,12 +17,15 @@ function checkForMiriam() {
 
 
 // Load the JSON data
-fetch('./monsters.json')
-    .then(response => response.json())
-    .then(data => {
-        monsterData = data;
-        populateDropdowns(data);
-    });
+function fetchMonsters() {
+    fetch('./monsters.json')
+      .then(res => res.json())
+      .then(monsters => {
+        const filtered = monsters.filter(m => m.obtainable && m.archetype !== "Material");
+        monsterData = filtered;
+        populateDropdowns(filtered);
+      });
+}
 
 function fetchSkills() {
     fetch('./skills.json')
@@ -42,38 +45,62 @@ function getMonsterDetails(monsterValue, is2A = false) {
 }
 
 function populateDropdowns(monsters) {
-    const selects = document.querySelectorAll('select');
-    selects.forEach(select => {
-        select.innerHTML = '<option value="">Select Monster</option>';
-        
-        // Count non-2A monsters with same name
-        const nameCount = {};
-        monsters.forEach(m => {
-            if (m.awaken_level !== 2) {
-                nameCount[m.name] = (nameCount[m.name] || 0) + 1;
+    const nameCount = {};
+    monsters.forEach((m) => {
+        if (m.awaken_level !== 2) {
+            nameCount[m.name] = (nameCount[m.name] || 0) + 1;
+        }
+    });
+
+    const optionsHTML = ['<option value="">Select Monster</option>']
+        .concat(
+            monsters
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((monster) => {
+                    const displayName =
+                        monster.awaken_level === 2 ? `${monster.name} (2A)`
+                            : nameCount[monster.name] > 1 ? `${monster.name} (${monster.element})`
+                              : monster.name;
+
+                    return `<option value="${monster.name}|${monster.element}">${displayName}</option>`;
+                })
+        )
+        .join("");
+
+    document.querySelectorAll("select").forEach((select) => {
+        select.innerHTML = optionsHTML;
+    });
+    document.querySelectorAll("select").forEach((select) => {
+        new TomSelect(select, {
+            maxOptions: 500,
+            placeholder: "Select Monster",
+            persist: false,
+            allowEmptyOption: true,
+            create: false,
+            onInitialize() {
+                this.wrapper.classList.add("no-drag");
+                select.style.visibility = "hidden";
+            },
+            onFocus() {
+                // Clear the selected item so input is empty
+                this.clear();
+                this.open(); // Optional: immediately open dropdown
+            },
+            onBlur() {
+                if (!this.getValue()) {
+                    this.settings.placeholder = "Select Monster";
+                    this.control_input.placeholder = "Select Monster";
+                }
+            },
+            onItemAdd(value, item) {
+                this.blur(); // Immediately remove focus after selection
             }
-        });
-        
-        const sortedMonsters = monsters
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map(monster => ({
-                ...monster,
-                displayName: monster.awaken_level === 2 ? `${monster.name} (2A)`
-                    : nameCount[monster.name] > 1 ? `${monster.name} (${monster.element})`
-                        : monster.name,
-                value: `${monster.name}|${monster.element}`
-            }));
-        
-        sortedMonsters.forEach(monster => {
-            const option = document.createElement('option');
-            option.value = monster.value;
-            option.textContent = monster.displayName;
-            select.appendChild(option);
         });
     });
 }
 
-function fetchAndPopulateMonsters() {
+
+/*function fetchAndPopulateMonsters() {
     fetch('monsters.json')
         .then(response => response.json())
         .then(monsters => {
@@ -95,7 +122,7 @@ function fetchAndPopulateMonsters() {
         .catch(error => {
             console.error('Error fetching monsters:', error);
         });
-}
+}*/
 
 function updateMonster(id) {
     checkForMiriam();
@@ -626,14 +653,9 @@ function initializeDraggableCards() {
         let placeholder = null;
 
         card.addEventListener('mousedown', function(e) {
-            if (e.target.tagName === 'SELECT' || 
-                e.target.tagName === 'INPUT' || 
-                e.target.tagName === 'LABEL' ||
-                e.target.tagName === 'BUTTON' ||
-                e.target.classList.contains('tooltip-icon') ||
-                e.target.closest('select, input, label, button, .tooltip-icon')) {
-                return;
-            }
+        if (e.target.closest('select, input, label, button, .tooltip-icon, .no-drag')) {
+          return;
+        }
 
             e.preventDefault();
             isDragging = true;
@@ -1076,9 +1098,17 @@ function recalculateTeamSpeeds() {
                     if (speedLeadPosition && 2 < speedLeadPosition) {
                         finalspeed += 1;
                     }
+                    if (finalspeed <= 0)
+                        {
+                           finalspeed = 0; 
+                        }
                     secondMonCard.querySelector('.combat-speed').textContent = `Speed Needed: ${finalspeed}`;
                 }
             }
+            if (tunedSpeed <= 0)
+                {
+                    tunedSpeed = 0;
+                }
             card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
         }
     });
@@ -1195,7 +1225,8 @@ function resetCalculator() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    fetchAndPopulateMonsters();
+    //fetchAndPopulateMonsters();
+    fetchMonsters();
     fetchSkills();
     //populateMonsterOptions();
     initializeTurnOrderListeners();

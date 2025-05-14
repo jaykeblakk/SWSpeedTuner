@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Summoners War Speed Tuning Calculator</title>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
     <script>
     document.write('<script src="script.js?v=' + Date.now() + '" defer><\/script>');
     </script>
+
 </head>
 <body>
     <h1>Summoners War Speed Tuning Calculator</h1>
@@ -18,7 +21,7 @@
         <div class="team friendly">
             <div class="monster">
                 <div class="monster-main-stats">
-                <select id="friendly1" onchange="updateMonster('friendly1')">
+                <select class="monster-select" id="friendly1" onchange="updateMonster('friendly1')">
                     <option value="">Select Monster</option>
                 </select>
                 <img id="friendly1-image" src="summonericon.png" alt="Monster" class="monster-image">
@@ -70,7 +73,7 @@
             </div>
             <div class="monster">
                 <div class="monster-main-stats">
-                <select id="friendly2" onchange="updateMonster('friendly2')">
+                <select class="monster-select" id="friendly2" onchange="updateMonster('friendly2')">
                     <option value="">Select Monster</option>
                 </select>
                 <img id="friendly2-image" src="summonericon.png" alt="Monster" class="monster-image">
@@ -123,7 +126,7 @@
             </div>
             <div class="monster">
                 <div class="monster-main-stats">
-                <select id="friendly3" onchange="updateMonster('friendly3')">
+                <select class="monster-select" id="friendly3" onchange="updateMonster('friendly3')">
                     <option value="">Select Monster</option>
                 </select>
                 <img id="friendly3-image" src="summonericon.png" alt="Monster" class="monster-image">
