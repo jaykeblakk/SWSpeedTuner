@@ -70,34 +70,104 @@ function populateDropdowns(monsters) {
     document.querySelectorAll("select").forEach((select) => {
         select.innerHTML = optionsHTML;
     });
+    
+    // Initialize Choices.js on each select element
     document.querySelectorAll("select").forEach((select) => {
-        new TomSelect(select, {
-            maxOptions: 500,
-            placeholder: "Select Monster",
-            persist: false,
-            allowEmptyOption: true,
-            create: false,
-            onInitialize() {
-                this.wrapper.classList.add("no-drag");
-                select.style.visibility = "hidden";
-            },
-            onFocus() {
-                // Clear the selected item so input is empty
-                this.clear();
-                this.open(); // Optional: immediately open dropdown
-            },
-            onBlur() {
-                if (!this.getValue()) {
-                    this.settings.placeholder = "Select Monster";
-                    this.control_input.placeholder = "Select Monster";
-                }
-            },
-            onItemAdd(value, item) {
-                this.blur(); // Immediately remove focus after selection
+        // Create Choices instance with simplified configuration
+        const choices = new Choices(select, {
+            searchEnabled: true,
+            searchPlaceholderValue: "Type to search...",
+            placeholder: true,
+            placeholderValue: "Select Monster",
+            itemSelectText: '',
+            shouldSort: false, // Don't sort again since we already sorted
+            searchResultLimit: 100,
+            position: 'bottom',
+            // Remove custom class names to use defaults
+            removeItemButton: false,
+            searchFields: ['label', 'value'],
+            searchChoices: true,
+            renderChoiceLimit: -1,
+            renderSelectedChoices: 'auto',
+            loadingText: 'Loading...',
+            noResultsText: 'No results found',
+            noChoicesText: 'No choices to choose from',
+            fuseOptions: {
+                includeScore: true,
+                threshold: 0.1
             }
+        });
+        
+        // Store the Choices instance on the select element for later reference
+        select.choicesInstance = choices;
+        
+        // Add keydown event listener to handle Enter key
+        choices.input.element.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const searchText = this.value.trim().toLowerCase();
+                
+                if (searchText) {
+                    // Find the first matching option
+                    const options = select.options;
+                    let matchingOption = null;
+                    
+                    // Try exact match first
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].text.toLowerCase() === searchText) {
+                            matchingOption = options[i];
+                            break;
+                        }
+                    }
+                    
+                    // If no exact match, try starts with
+                    if (!matchingOption) {
+                        for (let i = 0; i < options.length; i++) {
+                            if (options[i].text.toLowerCase().startsWith(searchText)) {
+                                matchingOption = options[i];
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If still no match, try contains
+                    if (!matchingOption) {
+                        for (let i = 0; i < options.length; i++) {
+                            if (options[i].text.toLowerCase().includes(searchText)) {
+                                matchingOption = options[i];
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (matchingOption) {
+                        // Set the value
+                        choices.setChoiceByValue(matchingOption.value);
+                        
+                        // Trigger the change event
+                        updateMonster(select.id);
+                        
+                        // Prevent default behavior
+                        e.preventDefault();
+                    }
+                }
+            }
+        });
+        
+        // Add change event listener
+        select.addEventListener('change', function() {
+            updateMonster(this.id);
         });
     });
 }
+
+
+
+
+
+
+
+
+
 
 
 /*function fetchAndPopulateMonsters() {
@@ -158,6 +228,7 @@ function updateMonster(id) {
                 <input type="radio" name="kroa-target-${id}" value="2" checked>
                 Monster 2
             </label>
+            <p></p>
             <label>
                 <input type="radio" name="kroa-target-${id}" value="3">
                 Monster 3
@@ -653,9 +724,10 @@ function initializeDraggableCards() {
         let placeholder = null;
 
         card.addEventListener('mousedown', function(e) {
-        if (e.target.closest('select, input, label, button, .tooltip-icon, .no-drag')) {
-          return;
-        }
+            // Make sure we're not clicking on a Choices.js element or other interactive element
+            if (e.target.closest('select, input, label, button, .tooltip-icon, .no-drag, .choices')) {
+                return;
+            }
 
             e.preventDefault();
             isDragging = true;
@@ -688,6 +760,7 @@ function initializeDraggableCards() {
             document.addEventListener('mouseup', mouseUp);
         });
 
+        // Rest of the draggable cards function remains unchanged
         function moveAt(pageX, pageY) {
             card.style.left = `${pageX - offsetX - row.getBoundingClientRect().left}px`;
             card.style.top = `${pageY - offsetY - row.getBoundingClientRect().top}px`;
@@ -717,34 +790,234 @@ function initializeDraggableCards() {
             }
         }
 
+function mouseUp() {
+    if (!isDragging) return;
+    isDragging = false;
 
-        function mouseUp() {
-            if (!isDragging) return;
-            isDragging = false;
+    document.removeEventListener('mousemove', mouseMove);
+    document.removeEventListener('mouseup', mouseUp);
 
-            document.removeEventListener('mousemove', mouseMove);
-            document.removeEventListener('mouseup', mouseUp);
+    // Reset card styles
+    card.style.position = '';
+    card.style.left = '';
+    card.style.top = '';
+    card.style.width = '';
+    card.style.height = '';
+    card.style.zIndex = '';
+    card.style.pointerEvents = '';
+    card.classList.remove('dragging');
 
-            // Reset card styles
-            card.style.position = '';
-            card.style.left = '';
-            card.style.top = '';
-            card.style.width = '';
-            card.style.height = '';
-            card.style.zIndex = '';
-            card.style.pointerEvents = '';
-            card.classList.remove('dragging');
+    // Insert card in placeholder position
+    row.insertBefore(card, placeholder);
+    placeholder.remove();
+    placeholder = null;
 
-            // Insert card in placeholder position
-            row.insertBefore(card, placeholder);
-            placeholder.remove();
-            placeholder = null;
+    // Get all cards in their new order
+    const allCards = Array.from(row.querySelectorAll('.monster'));
+    
+    // Store the current state of all monsters before updating IDs
+    const monsterStates = allCards.map(card => {
+        const selectElement = card.querySelector('select');
+        const currentId = selectElement.id;
+        
+        // Store the complete monster information
+        return {
+            originalId: currentId,
+            value: selectElement.value,
+            selectedIndex: selectElement.selectedIndex, // Store the actual selected index
+            selectedText: selectElement.options[selectElement.selectedIndex]?.text || '',
+            runeSpeed: document.getElementById(`${currentId}-rune-speed`)?.value || 0,
+            artifactSpeed: document.getElementById(`${currentId}-artifact-speed`)?.value || 0,
+            isSwift: document.getElementById(`${currentId}-swift`)?.checked || false,
+            atbBoost: document.getElementById(`${currentId}-atb-boost`)?.value || 0,
+            isSpeedLead: document.getElementById(`${currentId}-speedlead`)?.checked || false
+        };
+    });
+    
+    // Update all IDs to match new positions
+    allCards.forEach((card, index) => {
+        const newPosition = index + 1;
+        
+        // Update all element IDs within this card
+        card.querySelectorAll('[id]').forEach(element => {
+            const currentId = element.id;
+            const match = currentId.match(/^(friendly\d+)(.*)$/);
+            
+            if (match) {
+                const suffix = match[2]; // e.g., "-rune-speed"
+                element.id = `friendly${newPosition}${suffix}`;
+                
+                // Also update any for attributes in labels
+                if (element.tagName === 'INPUT') {
+                    const label = card.querySelector(`label[for="${currentId}"]`);
+                    if (label) {
+                        label.setAttribute('for', `friendly${newPosition}${suffix}`);
+                    }
+                }
+            }
+        });
+    });
+    
+    // Now apply the stored values to the new positions
+    monsterStates.forEach((state, index) => {
+        const newId = `friendly${index + 1}`;
+        const newSelect = document.getElementById(newId);
+        
+        if (newSelect && state.selectedIndex > 0) { // Only process if a monster was selected
+            // First, destroy the Choices instance if it exists
+            if (newSelect.choicesInstance) {
+                newSelect.choicesInstance.destroy();
+            }
+            
+            // Set the value and selected index on the raw select element
+            newSelect.value = state.value;
+            newSelect.selectedIndex = state.selectedIndex;
+            
+            // Reinitialize Choices.js
+            const choices = new Choices(newSelect, {
+                searchEnabled: true,
+                searchPlaceholderValue: "Type to search...",
+                placeholder: true,
+                placeholderValue: "Select Monster",
+                itemSelectText: '',
+                shouldSort: false,
+                searchResultLimit: 100,
+                position: 'bottom',
+                removeItemButton: false,
+                searchFields: ['label', 'value'],
+                searchChoices: true,
+                renderChoiceLimit: -1,
+                renderSelectedChoices: 'auto',
+                loadingText: 'Loading...',
+                noResultsText: 'No results found',
+                noChoicesText: 'No choices to choose from',
+                fuseOptions: {
+                    includeScore: true,
+                    threshold: 0.1
+                }
+            });
+            
+            // Store the new Choices instance
+            newSelect.choicesInstance = choices;
+            
+            // Add keydown event listener to handle Enter key
+            choices.input.element.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const searchText = this.value.trim().toLowerCase();
+                    
+                    if (searchText) {
+                        // Find the first matching option
+                        const options = newSelect.options;
+                        let matchingOption = null;
+                        
+                        // Try exact match first
+                        for (let i = 0; i < options.length; i++) {
+                            if (options[i].text.toLowerCase() === searchText) {
+                                matchingOption = options[i];
+                                break;
+                            }
+                        }
+                        
+                        // If no exact match, try starts with
+                        if (!matchingOption) {
+                            for (let i = 0; i < options.length; i++) {
+                                if (options[i].text.toLowerCase().startsWith(searchText)) {
+                                    matchingOption = options[i];
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // If still no match, try contains
+                        if (!matchingOption) {
+                            for (let i = 0; i < options.length; i++) {
+                                if (options[i].text.toLowerCase().includes(searchText)) {
+                                    matchingOption = options[i];
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (matchingOption) {
+                            // Set the value
+                            choices.setChoiceByValue(matchingOption.value);
+                            
+                            // Trigger the change event
+                            updateMonster(newSelect.id);
+                            
+                            // Prevent default behavior
+                            e.preventDefault();
+                        }
+                    }
+                }
+            });
+            
+            // After updating all IDs and before applying stored values, standardize the order of containers
+allCards.forEach((card, index) => {
+    const newPosition = index + 1;
+    const specialAbilitiesDiv = card.querySelector('.monster-special-abilities');
+    
+    if (specialAbilitiesDiv) {
+        // Get the containers
+        const speedLeadContainer = specialAbilitiesDiv.querySelector(`#friendly${newPosition}-speedlead-container`);
+        const atbBoostContainer = specialAbilitiesDiv.querySelector(`#friendly${newPosition}-atb-boost-container`);
+        
+        // If both exist, ensure ATB boost comes first, then speed lead
+        if (speedLeadContainer && atbBoostContainer) {
+            // Remove both from DOM
+            if (speedLeadContainer.parentNode) {
+                speedLeadContainer.parentNode.removeChild(speedLeadContainer);
+            }
+            if (atbBoostContainer.parentNode) {
+                atbBoostContainer.parentNode.removeChild(atbBoostContainer);
+            }
+            
+            // Add them back in the desired order
+            specialAbilitiesDiv.appendChild(atbBoostContainer);
+            specialAbilitiesDiv.appendChild(speedLeadContainer);
+        }
+    }
+});
 
-            recalculateTeamSpeeds();
-            updateSpeedDisplayText();
+            
+            // Add change event listener
+            newSelect.addEventListener('change', function() {
+                updateMonster(this.id);
+            });
+            
+            // Update the monster to ensure proper initialization
+            updateMonster(newId);
+            
+            // Update other values
+            const runeSpeedInput = document.getElementById(`${newId}-rune-speed`);
+            if (runeSpeedInput) runeSpeedInput.value = state.runeSpeed;
+            
+            const artifactSpeedInput = document.getElementById(`${newId}-artifact-speed`);
+            if (artifactSpeedInput) artifactSpeedInput.value = state.artifactSpeed;
+            
+            const swiftCheckbox = document.getElementById(`${newId}-swift`);
+            if (swiftCheckbox) swiftCheckbox.checked = state.isSwift;
+            
+            // Set ATB boost and speed lead values
+            const atbBoostInput = document.getElementById(`${newId}-atb-boost`);
+            if (atbBoostInput) atbBoostInput.value = state.atbBoost;
+            
+            const speedLeadCheckbox = document.getElementById(`${newId}-speedlead`);
+            if (speedLeadCheckbox) speedLeadCheckbox.checked = state.isSpeedLead;
         }
     });
+    
+    // Force a complete recalculation
+    checkForMiriam();
+    recalculateTeamSpeeds();
+    updateSpeedDisplayText();
 }
+
+
+
+    });
+}
+
 
 
 
@@ -1153,9 +1426,14 @@ function resetCalculator() {
     // Reset all select elements to their default option
     const selects = document.querySelectorAll('select');
     selects.forEach(select => {
-        select.selectedIndex = 0;
+        if (select.choicesInstance) {
+            select.choicesInstance.setChoiceByValue('');
+        } else {
+            select.selectedIndex = 0;
+        }
     });
     
+    // Rest of your reset function remains unchanged
     // Reset all number inputs to 0
     const inputs = document.querySelectorAll('input[type="number"]');
     inputs.forEach(input => {
@@ -1218,11 +1496,12 @@ function resetCalculator() {
     
     // Remove any Kahli skill selection divs
     document.querySelectorAll('.kahli-skill-selection').forEach(div => {
-    div.remove();
+        div.remove();
     });
     
     console.log('Calculator reset complete');
 }
+
 
 document.addEventListener('DOMContentLoaded', function() {
     //fetchAndPopulateMonsters();

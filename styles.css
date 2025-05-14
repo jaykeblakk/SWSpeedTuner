@@ -163,18 +163,21 @@ select, input[type="number"] {
 }
 
 .monster-main-stats {
-    /* Contains everything except ATB and Leader skills */
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Fixed height for monster special abilities div */
 .monster-special-abilities {
-    margin-top: auto;
-    padding-top: 15px;
-    border-top: 2px solid #ccc;
-    display: flex;
-    flex-direction: column;
+  height: 200px !important; /* Fixed height instead of min-height */
+  background-color: #363636;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 #friendly1-speedlead-container,
@@ -243,23 +246,27 @@ h1 {
     margin-bottom: 30px;
 }
 
-.monster-special-abilities {
-    background-color: #363636;
-    border-radius: 6px;
-    padding: 15px;
-    margin-top: 15px;
-}
-
+/* Style for the containers inside */
 #friendly1-speedlead-container,
 #friendly2-speedlead-container,
 #friendly3-speedlead-container,
 #friendly1-atb-boost-container,
 #friendly2-atb-boost-container,
 #friendly3-atb-boost-container {
-    background-color: #363636;
-    border-radius: 6px;
-    padding: 15px;
-    margin-top: 10px;
+  background-color: #363636;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 10px;
+}
+
+/* When containers are hidden, don't let them affect layout */
+#friendly1-speedlead-container[style*="display: none"],
+#friendly2-speedlead-container[style*="display: none"],
+#friendly3-speedlead-container[style*="display: none"],
+#friendly1-atb-boost-container[style*="display: none"],
+#friendly2-atb-boost-container[style*="display: none"],
+#friendly3-atb-boost-container[style*="display: none"] {
+  display: none !important; /* Force display: none */
 }
 
 label {
@@ -494,27 +501,31 @@ select::-webkit-scrollbar-thumb:hover {
     background: #606060;
 }
 
-/* Modify the display property to maintain layout */
+/* Make hidden containers take up space */
 #friendly1-speedlead-container[style*="display: none"],
 #friendly2-speedlead-container[style*="display: none"],
 #friendly3-speedlead-container[style*="display: none"],
 #friendly1-atb-boost-container[style*="display: none"],
 #friendly2-atb-boost-container[style*="display: none"],
 #friendly3-atb-boost-container[style*="display: none"] {
-    display: block !important;
-    visibility: hidden;
-    opacity: 0;
-    height: 40px; /* Same as min-height above */
-    overflow: hidden;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.monster-special-abilities::after {
+  content: "";
+  flex-grow: 1;
+  min-height: 50px; /* Adjust as needed */
 }
 
 .monster:not(:first-child) .monster-special-abilities {
     margin-top: 85px; /* Match height of rune-speed div */
     position: relative;
-}
-
-.monster-special-abilities {
-    height: 200px;
 }
 
 
@@ -543,130 +554,185 @@ select::-webkit-scrollbar-thumb:hover {
     justify-content: space-between;
 }
 
-/* Dark mode styling for Tom Select */
-.ts-wrapper {
-  background-color: #363636;
-  border: 1px solid #505050;
-  color: #e0e0e0;
-  border-radius: 4px;
-  font-family: 'Leelawadee UI', 'Segoe UI', sans-serif;
-  font-size: 16px;
+
+
+
+
+/* Choices.js Dark Theme Styling - More specific selectors */
+.choices {
+  width: 100%;
+  margin-bottom: 10px;
 }
 
-.ts-control {
-  background-color: #363636;
-  color: #e0e0e0;
-  min-height: 44px;
-  padding: 8px;
+/* Main container */
+.choices {
+  background-color: #363636 !important;
+  border: 1px solid #505050 !important;
+  color: #e0e0e0 !important;
+  border-radius: 4px !important;
+  font-family: 'Leelawadee UI', 'Segoe UI', sans-serif !important;
+  font-size: 16px !important;
 }
 
-.ts-dropdown {
-  background-color: #2d2d2d;
-  border: 1px solid #505050;
-  color: #e0e0e0;
-  max-height: 300px;
-  overflow-y: auto;
+/* Inner container */
+.choices__inner {
+  background-color: #363636 !important;
+  color: #e0e0e0 !important;
+  min-height: 44px !important;
+  padding: 8px !important;
+  border: none !important;
+  border-radius: 4px !important;
 }
 
-.ts-dropdown .option {
-  padding: 10px;
-  cursor: pointer;
-}
-
-.ts-dropdown .option:hover,
-.ts-dropdown .option.active {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.ts-wrapper.single.has-items .ts-control {
-  background-color: #363636;
-  color: #e0e0e0;
-}
-
-/* Deep styling for Tom Select dropdown list */
-.ts-dropdown {
-  background-color: #2d2d2d;
-  border: 1px solid #505050;
-  color: #e0e0e0;
-  font-family: 'Leelawadee UI', 'Segoe UI', sans-serif;
-  font-size: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
-  z-index: 10000; /* keep above everything else */
-}
-
-.ts-dropdown .option {
-  padding: 10px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #404040;
-}
-
-.ts-dropdown .option:last-child {
-  border-bottom: none;
-}
-
-.ts-dropdown .option:hover,
-.ts-dropdown .option.active {
-  background-color: #4CAF50;
-  color: white;
-}
-
-/* Hide default selects until ready */
-.monster-select {
-  visibility: hidden;
-}
-
-/* Once Tom Select replaces it, show it */
-.ts-wrapper {
-  visibility: visible;
-}
-
-/*  Dropdown list container */
-.ts-dropdown {
+/* Dropdown list */
+.choices__list--dropdown {
   background-color: #2d2d2d !important;
-  border: 1px solid #505050;
-  color: #ffffff;
+  border: 1px solid #505050 !important;
+  color: #e0e0e0 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+  z-index: 9999 !important;
 }
 
-/*  Individual dropdown items */
-.ts-dropdown .option {
-  background-color: #2d2d2d !important;
-  color: #ffffff !important;
-  padding: 10px 12px;
-  border-bottom: 1px solid #404040;
+/* Dropdown items */
+.choices__list--dropdown .choices__item {
+  color: #e0e0e0 !important;
+  padding: 10px 12px !important;
 }
 
-/* Hover & active item styling */
-.ts-dropdown .option:hover,
-.ts-dropdown .option.active {
+/* Highlighted dropdown item */
+.choices__list--dropdown .choices__item--selectable.is-highlighted {
   background-color: #4CAF50 !important;
   color: white !important;
 }
 
-/*  Base styling for the control box */
-.ts-wrapper.single .ts-control {
-  background-color: #363636 !important;
-  color: #e0e0e0 !important;
-  border: 1px solid #505050 !important;
+/* Regular dropdown items */
+.choices__list--dropdown .choices__item--selectable {
+  background-color: #2d2d2d !important;
+  padding: 10px 12px !important;
+  border-bottom: 1px solid #404040 !important;
 }
 
-/*  When the dropdown is focused (clicked or typed into) */
-.ts-wrapper.single.focus .ts-control {
-  background-color: #363636 !important;
-  color: #e0e0e0 !important;
-  border-color: #4CAF50 !important; /* Optional green border to show focus */
+/* Last dropdown item */
+.choices__list--dropdown .choices__item--selectable:last-child {
+  border-bottom: none !important;
 }
 
-/*  Also protect the item inside from switching style */
-.ts-wrapper.single.focus .ts-control .item {
+/* Search input */
+.choices__input {
   background-color: #363636 !important;
-  color: #e0e0e0 !important;
-}
-
-.ts-control input {
   color: #ffffff !important;
-  background-color: transparent !important;
 }
+
+.choices__input:focus {
+  background-color: #363636 !important;
+  color: #ffffff !important;
+}
+
+/* Single select styling */
+.choices[data-type*="select-one"] .choices__inner {
+  padding-bottom: 8px !important;
+}
+
+/* Dropdown arrow */
+.choices[data-type*="select-one"]:after {
+  border-color: #e0e0e0 transparent transparent transparent !important;
+}
+
+/* Dropdown arrow when open */
+.choices[data-type*="select-one"].is-open:after {
+  border-color: transparent transparent #e0e0e0 transparent !important;
+}
+
+/* Placeholder text */
+.choices__placeholder {
+  opacity: 0.7 !important;
+  color: #e0e0e0 !important;
+}
+
+/* Selected item */
+.choices__item.choices__item--selectable {
+  background-color: #363636 !important;
+  color: #e0e0e0 !important;
+}
+
+/* Search input in dropdown */
+.choices__input--cloned {
+  background-color: #363636 !important;
+  color: #ffffff !important;
+  min-width: 100% !important;
+  padding: 8px !important;
+}
+
+/* Focused state */
+.is-focused .choices__inner,
+.is-open .choices__inner {
+  border-color: #4CAF50 !important;
+}
+
+/* Dropdown header */
+.choices__list--dropdown .choices__header {
+  border-bottom: 1px solid #505050 !important;
+  color: #e0e0e0 !important;
+  padding: 10px !important;
+  background-color: #2d2d2d !important;
+}
+
+/* Ensure dropdown is visible when open */
+.choices.is-open {
+  z-index: 9999 !important;
+}
+
+/* Fix for dropdown positioning */
+.choices__list--dropdown {
+  margin-top: 2px !important;
+}
+
+/* Hide original selects */
+select.monster-select {
+  display: none !important;
+}
+
+/* Make sure text is visible */
+.choices__list--single {
+  color: #e0e0e0 !important;
+}
+
+/* Style for no results text */
+.choices__list--dropdown .choices__item--disabled {
+  background-color: #2d2d2d !important;
+  color: #999 !important;
+}
+
+/* Ensure the dropdown is properly sized */
+.choices__list--dropdown .choices__list {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+/* Make dropdowns shorter */
+.choices__inner {
+  background-color: #363636 !important;
+  color: #e0e0e0 !important;
+  min-height: 10px !important; /* Reduced from 44px */
+  padding: 4px 8px !important; /* Reduced top/bottom padding */
+  border: none !important;
+  border-radius: 4px !important;
+  line-height: 22px !important; /* Add this to reduce internal spacing */
+}
+
+/* Also adjust the single item list height */
+.choices__list--single {
+  padding: 2px 16px 2px 4px !important; /* Reduced padding */
+}
+
+/* Adjust the dropdown arrow position */
+.choices[data-type*="select-one"]:after {
+  top: 45% !important; /* Adjust arrow vertical position */
+}
+
+
+
+
 
 
