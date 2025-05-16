@@ -403,14 +403,17 @@ function updateMonster(id) {
 
 function getAtbBoostValue(skillIds, isYeonhong = false) {
     if (!skillsData) return 0;
-    
+    console.log(``);
+    console.log(`Entered ATB Boost check`);
     for (const skillId of skillIds) {
         const skill = skillsData.find(s => s.id === skillId);
         if (!skill || !skill.effects) continue;
-        
         for (const effect of skill.effects) {
             const isAtbBoost = (effect.effect.id === 17 || effect.effect.name === "Increase ATB");
-            
+            console.log(`Skill: ${skill.name}`);
+            console.log(`Skill Effect: ${effect.effect.name}`);
+            console.log(`isAtbBoost: ${isAtbBoost}`);
+            console.log(`Self_Effect: ${effect.self_effect}`);
             // For Yeonhong, include the ATB boost even if it's self-only
             if (isYeonhong && isAtbBoost && effect.quantity) {
                 return effect.quantity;
@@ -422,7 +425,7 @@ function getAtbBoostValue(skillIds, isYeonhong = false) {
             }
         }
     }
-    
+    console.log(``);
     return 0;
 }
 
@@ -1017,19 +1020,6 @@ allCards.forEach((card, index) => {
 
     });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // Helper function to update all element IDs within a monster card
 function updateElementIds(card, newPosition) {
