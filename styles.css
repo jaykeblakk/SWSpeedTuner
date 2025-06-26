@@ -735,8 +735,16 @@ select.monster-select {
   top: 45% !important; /* Adjust arrow vertical position */
 }
 
+.tuner-options{
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+}
 
-
+.donation-links{
+    margin-top: -20px;
+    padding-top: -10px;
+    text-align: center;
+}
 
 
 
