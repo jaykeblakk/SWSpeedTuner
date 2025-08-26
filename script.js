@@ -1762,7 +1762,44 @@ function recalculateTeamSpeeds() {
                 console.log(`monster2tfnumber: ${monster2tfnumber}`);
                 mon3efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
                 
-                // Removed Monster 3 vs Monster 2 conflict logic - let Monster 4 handle all adjustments
+                // In 3-monster mode, check for Monster 3 vs Monster 2 conflicts (since Monster 4 logic won't run)
+                if (maxMonsters === 3) {
+                    // Check if Monster 2 is slower than Monster 3 and needs adjustment
+                    if (monster2combatspeed != null && monster2combatspeed < monster3combatspeed && !adjustedMonsters.has(2)) {
+                        console.log(`Adjusting Monster 2 due to Monster 3 conflict in 3-monster mode`);
+                        console.log(`Original Monster 2 combat speed: ${monster2combatspeed}`);
+                        console.log(`Monster 3 combat speed: ${monster3combatspeed}`);
+                        
+                        // Adjust Monster 2 to match Monster 3's exact combat speed
+                        const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster2basespeed;
+                        const requiredCombatSpeed = monster3combatspeed; // Same combat speed as Monster 3
+                        let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead);
+                        
+                        // Remove +1 speed adjustment - keep speeds exactly the same
+                        // if (speedLeadPosition && 2 < speedLeadPosition) {
+                        //     finalspeed += 1;
+                        // }
+                        if (finalspeed <= 0) {
+                            finalspeed = 0; 
+                        }
+                        
+                        // Update Monster 2's display
+                        const monster2Card = monsterCards[1];
+                        if (isShowCombatSpeed) {
+                            const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster2basespeed;
+                            const totalCombatSpeed = Math.ceil(baseSpeedWithLead + finalspeed);
+                            monster2Card.querySelector('.combat-speed').textContent = `Combat Speed: ${totalCombatSpeed}`;
+                        } else {
+                            monster2Card.querySelector('.combat-speed').textContent = `Speed Needed: ${finalspeed}`;
+                        }
+                        
+                        // Mark Monster 2 as adjusted and update combat speed
+                        adjustedMonsters.add(2);
+                        monster2combatspeed = monster3combatspeed; // Now same speed as Monster 3
+                        
+                        console.log(`Monster 2 adjusted to match Monster 3's combat speed: ${finalspeed}`);
+                    }
+                }
             }
             if (thisMonsterPosition === 4) {
                 // Monster 4 calculations
@@ -1843,9 +1880,10 @@ function recalculateTeamSpeeds() {
                     const requiredCombatSpeed = monster4combatspeed; // Same combat speed as Monster 4
                     let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead);
                     
-                    if (speedLeadPosition && conflictMonster.position < speedLeadPosition) {
-                        finalspeed += 1;
-                    }
+                    // Remove +1 speed adjustment - keep speeds exactly the same
+                    // if (speedLeadPosition && conflictMonster.position < speedLeadPosition) {
+                    //     finalspeed += 1;
+                    // }
                     if (finalspeed <= 0) {
                            finalspeed = 0; 
                         }
