@@ -90,6 +90,24 @@ select, input[type="number"] {
 .swift-checkbox input[type="checkbox"] {
     margin-right: 5px;
 }
+
+.swift-checker {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.swift-checker label {
+    display: flex;
+    align-items: center;
+    color: #e0e0e0;
+    cursor: pointer;
+}
+
+.swift-checker input[type="checkbox"] {
+    margin-right: 5px;
+}
 .artifact-speed {
     margin-bottom: 10px;
 }
@@ -170,7 +188,7 @@ select, input[type="number"] {
 
 /* Fixed height for monster special abilities div */
 .monster-special-abilities {
-  height: 200px !important; /* Fixed height instead of min-height */
+  height: 250px !important; /* Fixed height instead of min-height */
   background-color: #363636;
   border-radius: 6px;
   padding: 15px;
@@ -210,6 +228,16 @@ select, input[type="number"] {
     min-height: 40px; /* Ensure consistent height */
 }
 
+#friendly4-speedlead-container,
+#friendly4-atb-boost-container {
+    background: #f5f5f5;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    min-height: 40px; /* Ensure consistent height */
+}
+
 .monster-image{
     display: block;
     margin: 0 auto;
@@ -238,6 +266,7 @@ select, input[type="number"] {
     font-size: 1.2em;
     color: #4CAF50;
     margin: 15px 0 2px 0; /* Reduce bottom margin */
+    font-weight: bold;
 }
 
 h1 {
@@ -246,13 +275,103 @@ h1 {
     margin-bottom: 30px;
 }
 
+/* Tuning Mode Selector */
+.tuning-mode-selector {
+    margin: 20px 0 30px 0;
+    text-align: center;
+}
+
+.tuning-mode-selector h4 {
+    color: #e0e0e0;
+    margin-bottom: 15px;
+}
+
+.mode-options {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.mode-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: #e0e0e0;
+    font-size: 16px;
+    transition: color 0.3s;
+}
+
+.mode-option:hover {
+    color: #4CAF50;
+}
+
+.mode-option input[type="radio"] {
+    margin-right: 8px;
+    accent-color: #4CAF50;
+    transform: scale(1.2);
+}
+
+.mode-option span {
+    user-select: none;
+}
+
+/* Mobile responsiveness for mode selector */
+@media (max-width: 768px) {
+    .mode-options {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+    
+    .mode-option {
+        font-size: 18px;
+    }
+}
+
+/* Combat Speed Toggle Global */
+.combat-speed-toggle-global {
+    text-align: center;
+    margin: 0 0 20px 0;
+    padding: 10px;
+    background-color: #2d2d2d;
+    border-radius: 6px;
+    border: 1px solid #404040;
+}
+
+.combat-speed-toggle-global label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #e0e0e0;
+    font-size: 14px;
+    transition: color 0.3s;
+}
+
+.combat-speed-toggle-global label:hover {
+    color: #4CAF50;
+}
+
+.combat-speed-toggle-global input[type="checkbox"] {
+    margin-right: 8px;
+    accent-color: #4CAF50;
+    transform: scale(1.1);
+}
+
+.combat-speed-toggle-global span {
+    user-select: none;
+}
+
 /* Style for the containers inside */
 #friendly1-speedlead-container,
 #friendly2-speedlead-container,
 #friendly3-speedlead-container,
+#friendly4-speedlead-container,
 #friendly1-atb-boost-container,
 #friendly2-atb-boost-container,
-#friendly3-atb-boost-container {
+#friendly3-atb-boost-container,
+#friendly4-atb-boost-container {
   background-color: #363636;
   border-radius: 6px;
   padding: 15px;
@@ -263,9 +382,11 @@ h1 {
 #friendly1-speedlead-container[style*="display: none"],
 #friendly2-speedlead-container[style*="display: none"],
 #friendly3-speedlead-container[style*="display: none"],
+#friendly4-speedlead-container[style*="display: none"],
 #friendly1-atb-boost-container[style*="display: none"],
 #friendly2-atb-boost-container[style*="display: none"],
-#friendly3-atb-boost-container[style*="display: none"] {
+#friendly3-atb-boost-container[style*="display: none"],
+#friendly4-atb-boost-container[style*="display: none"] {
   display: none !important; /* Force display: none */
 }
 
@@ -276,6 +397,21 @@ label {
 
 input[type="checkbox"] {
     accent-color: #4CAF50;
+}
+
+.exclude-checker {
+    margin-bottom: 10px;
+}
+
+.exclude-checker label {
+    display: flex;
+    align-items: center;
+    color: #e0e0e0;
+    cursor: pointer;
+}
+
+.exclude-checker input[type="checkbox"] {
+    margin-right: 5px;
 }
 
 .tooltip-container {
@@ -315,28 +451,35 @@ input[type="checkbox"] {
     display: block;
 }
 
-#kroa-boost-target {
+.kroa-boost-target {
     background: #363636;
     border-radius: 5px;
     padding: 10px;
     margin-top: 10px;
-    text-align: center;
+    text-align: left;
+    min-height: 80px; /* Ensure enough space for 3-4 monster options */
 }
 
-#kroa-boost-target p {
+.kroa-boost-target p {
     margin-bottom: 10px;
     font-weight: bold;
 }
 
-#kroa-boost-target label {
+.kroa-boost-target label {
     display: inline-block;
     margin: 0 10px;
     cursor: pointer;
+    vertical-align: top;
+    position: relative;
+    z-index: 10;
 }
 
-#kroa-boost-target input[type="radio"] {
+.kroa-boost-target input[type="radio"] {
     margin-right: 5px;
-    vertical-align: middle;
+    vertical-align: top;
+    text-align: left;
+    position: relative;
+    z-index: 10;
 }
 
 .site-footer {
@@ -422,6 +565,7 @@ input[type="checkbox"] {
 
   .combat-speed {
     font-size: 1em;
+    font-weight: bold;
   }
 }
 
@@ -505,9 +649,11 @@ select::-webkit-scrollbar-thumb:hover {
 #friendly1-speedlead-container[style*="display: none"],
 #friendly2-speedlead-container[style*="display: none"],
 #friendly3-speedlead-container[style*="display: none"],
+#friendly4-speedlead-container[style*="display: none"],
 #friendly1-atb-boost-container[style*="display: none"],
 #friendly2-atb-boost-container[style*="display: none"],
-#friendly3-atb-boost-container[style*="display: none"] {
+#friendly3-atb-boost-container[style*="display: none"],
+#friendly4-atb-boost-container[style*="display: none"] {
   visibility: hidden !important;
   opacity: 0 !important;
   position: absolute !important;
@@ -524,7 +670,7 @@ select::-webkit-scrollbar-thumb:hover {
 }
 
 .monster:not(:first-child) .monster-special-abilities {
-    margin-top: 85px; /* Match height of rune-speed div */
+    margin-top: 55px; /* Moved up 30px from original 85px to compensate for increased height */
     position: relative;
 }
 

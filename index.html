@@ -17,7 +17,33 @@
     <h4>Select the monsters you'd like to tune using the selectors below (type the name once you click on the dropdown for quick search).</h4>
     <h4>The tuning order is left to right. (On mobile top to bottom)</h4>
     <h4>Speed from runes is the green + number you see next to speed in your monster details.</h4>
+    
+    <div class="tuning-mode-selector">
+        <h4>Tuning Mode:</h4>
+        <div class="mode-options">
+            <label class="mode-option">
+                <input type="radio" name="tuning-mode" value="3-monster" checked>
+                <span>Siege</span>
+            </label>
+            <label class="mode-option">
+                <input type="radio" name="tuning-mode" value="4-monster">
+                <span>Arena</span>
+            </label>
+            <label class="mode-option">
+                <input type="radio" name="tuning-mode" value="rta">
+                <span>RTA</span>
+            </label>
+
+        </div>
+    </div>
+    
     <div class="calculator">
+        <div class="combat-speed-toggle-global">
+            <label>
+                <input type="checkbox" id="cmb-speed-toggle">
+                <span>Show Combat Speed (instead of Speed Needed)</span>
+            </label>
+        </div>
         <div class="team friendly">
             <div class="monster">
                 <div class="monster-main-stats">
@@ -46,8 +72,8 @@
                     </div>
                 </div>
                 <div class="swift-checker">
-                    <label><input type="checkbox" id="friendly1-swift" onchange="updateSwift('friendly1')"><span>Swift?</span></label>
-                    <div class="tooltip-container">
+                    <label><input type="checkbox" id="friendly1-swift" onchange="updateSwift('friendly1')" checked><span>Swift?</span></label>
+                    <div class="tooltip-container" style="display: inline-block;">
                         <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
                         <span class="tooltip-text">Toggle whether or not the monster has Swift runes (needed for precise calculations using Swift)</span>
                     </div>
@@ -80,7 +106,9 @@
                 <div class="monster-stats">
                     <p>Name: <span id="friendly2-name"></span></p>
                     <p>Base Speed: <span id="friendly2-speed"></span></p>
-
+                    <div class="exclude-checker">
+                        <label><input type="checkbox" id="friendly2-exclude" onchange="updateExclude('friendly2')"><span>Exclude from tuning</span></label>
+                    </div>
                 </div>
                 <div class="artifact-speed">
                     <label for="friendly2-artifact-speed">% SPD UP from Artifacts:</label>
@@ -99,8 +127,8 @@
                     </div>
                 </div>
                 <div class="swift-checker">
-                    <label><input type="checkbox" id="friendly2-swift" onchange="updateSwift('friendly2')"><span>Swift?</span></label>
-                    <div class="tooltip-container">
+                    <label><input type="checkbox" id="friendly2-swift" onchange="updateSwift('friendly2')" checked><span>Swift?</span></label>
+                    <div class="tooltip-container" style="display: inline-block;">
                         <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
                         <span class="tooltip-text">Toggle whether or not the monster has Swift runes (needed for precise calculations using Swift)</span>
                     </div>
@@ -133,6 +161,9 @@
                 <div class="monster-stats">
                     <p>Name: <span id="friendly3-name"></span></p>
                     <p>Base Speed: <span id="friendly3-speed"></span></p>
+                    <div class="exclude-checker">
+                        <label><input type="checkbox" id="friendly3-exclude" onchange="updateExclude('friendly3')"><span>Exclude from tuning</span></label>
+                    </div>
                 </div>
                 <div class="artifact-speed">
                     <label for="friendly3-artifact-speed">% SPD UP from Artifacts:</label>
@@ -151,8 +182,8 @@
                     </div>
                 </div>
                 <div class="swift-checker">
-                    <label><input type="checkbox" id="friendly3-swift" onchange="updateSwift('friendly3')"><span>Swift?</span></label>
-                    <div class="tooltip-container">
+                    <label><input type="checkbox" id="friendly3-swift" onchange="updateSwift('friendly3')" checked><span>Swift?</span></label>
+                    <div class="tooltip-container" style="display: inline-block;">
                         <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
                         <span class="tooltip-text">Toggle whether or not the monster has Swift runes (needed for precise calculations using Swift)</span>
                     </div>
@@ -174,6 +205,61 @@
                     </div>
                     </div>
                     </div>
+                </div>
+            </div>
+            <div class="monster">
+                <div class="monster-main-stats">
+                <select class="monster-select" id="friendly4" onchange="updateMonster('friendly4')">
+                    <option value="">Select Monster</option>
+                </select>
+                <img id="friendly4-image" src="summonericon.png" alt="Monster" class="monster-image">
+                <div class="monster-stats">
+                    <p>Name: <span id="friendly4-name"></span></p>
+                    <p>Base Speed: <span id="friendly4-speed"></span></p>
+                    <div class="exclude-checker">
+                        <label><input type="checkbox" id="friendly4-exclude" onchange="updateExclude('friendly4')"><span>Exclude from tuning</span></label>
+                    </div>
+                </div>
+                <div class="artifact-speed">
+                    <label for="friendly4-artifact-speed">% SPD UP from Artifacts:</label>
+                    <input type="number" id="friendly4-artifact-speed" min="0" max="1000" step="1" value="0" oninput="updateArtifactSpeed('friendly4')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Enter the total % of SPD UP effect shown on your artifacts (both left and right!)</span>
+                    </div>
+                </div>
+                <div class="rune-speed">
+                    <label for="friendly4-rune-speed">Speed from Runes:</label>
+                    <input type="number" id="friendly4-rune-speed" min="0" max="1000" step="1" value="0" onchange="updateRuneSpeed('friendly4')">
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Enter the total speed from runes. This is the green + number to the right of your monster's speed in the monster details.</span>
+                    </div>
+                </div>
+                <div class="swift-checker">
+                    <label><input type="checkbox" id="friendly4-swift" onchange="updateSwift('friendly4')" checked><span>Swift?</span></label>
+                    <div class="tooltip-container" style="display: inline-block;">
+                        <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                        <span class="tooltip-text">Toggle whether or not the monster has Swift runes (needed for precise calculations using Swift)</span>
+                    </div>
+                </div>
+                <div id="friendly4-combat-speed" class="combat-speed">Combat Speed: 0</div>
+                <div class="monster-special-abilities">
+                    <div id="friendly4-speedlead-container" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="friendly4-speedlead" onchange="updateSpeedLead('friendly4')">
+                            <span id="friendly4-speedlead-value"></span>% speed lead
+                        </label>
+                    </div>
+                    <div id="friendly4-atb-boost-container" class="atb-boost" style="display: none;">
+                        <label for="friendly4-atb-boost">ATB Boost %:</label>
+                        <input type="number" id="friendly4-atb-boost" min="0" max="100" step="1" value="0" onchange="updateAtbBoost('friendly4')">
+                        <div class="tooltip-container">
+                            <span class="tooltip-icon" onclick="toggleTooltip(event)">?</span>
+                            <span class="tooltip-text">Input the % ATB Boost shown in the skill. If it is a skill that can be skilled up, make sure to include the extra % from skilling up the monster's boost skill.</span>
+                        </div>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>
