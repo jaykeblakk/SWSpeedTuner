@@ -532,19 +532,24 @@ function updateMonster(id) {
     const isYeonhong = selectedMonster.name === "Yeonhong";
     const isCraig = selectedMonster.name === "Craig";
     const isMBisonLight = selectedMonster.name === "M. Bison" && selectedMonster.element === "Light";
+    const isVerdehile = selectedMonster.name === "Verdehile";
+    const isJeogun = selectedMonster.name === "Jeogun";
     const isMihyang = selectedMonster.name === "Mihyang";
     const hasAtbBoost = checkForAtbBoost(selectedMonster.skills, isYeonhong);
     const atbBoostContainer = document.getElementById(`${id}-atb-boost-container`);
     const atbBoostInput = document.getElementById(`${id}-atb-boost`);
 
     // Hard-coded exclusion: Mihyang should never show ATB boost
-    if ((hasAtbBoost || isCraig || isMBisonLight) && !isMihyang) {
+    if ((hasAtbBoost || isCraig || isMBisonLight || isVerdehile || isJeogun) && !isMihyang) {
         // Get the ATB boost value and set it in the input
         let atbBoostValue = 0;
 
-        if (isCraig || isMBisonLight) {
-            // Set Craig's and M. Bison (Light)'s default ATB boost to 40
+        if (isCraig || isMBisonLight || isVerdehile) {
+            // Set Craig's, M. Bison (Light)'s, and Verdehile's default ATB boost to 40
             atbBoostValue = 40;
+        } else if (isJeogun) {
+            // Set Jeogun's default ATB boost to 15
+            atbBoostValue = 15;
         } else {
             atbBoostValue = getAtbBoostValue(selectedMonster.skills, isYeonhong);
         }
