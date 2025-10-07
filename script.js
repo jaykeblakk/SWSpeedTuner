@@ -480,6 +480,35 @@ function updateMonster(id) {
         combatSpeedElement.after(chillingExplanation);
     }
     
+    // Remove any existing team-up explanation from ALL cards (cleanup when any monster changes)
+    document.querySelectorAll('.team-up-explanation').forEach(explanation => {
+        explanation.remove();
+    });
+    
+    // Check if we need to show team-up explanations and update ALL affected monsters
+    const teamUpPosition = getTeamUpMonsterPosition();
+    const verdehilePresent = isVerdehileInTeam();
+    
+    if (teamUpPosition && verdehilePresent) {
+        // Add team-up explanation to ALL monsters that come after the team-up monster
+        for (let i = teamUpPosition + 1; i <= maxMonsters; i++) {
+            const affectedMonsterCard = document.querySelector(`#friendly${i}`);
+            if (affectedMonsterCard && affectedMonsterCard.value) {
+                const card = affectedMonsterCard.closest('.monster');
+                const combatSpeedElement = card.querySelector('.combat-speed');
+                
+                const teamUpExplanation = document.createElement('p');
+                teamUpExplanation.className = 'team-up-explanation';
+                teamUpExplanation.style.color = 'green';
+                teamUpExplanation.style.fontStyle = 'italic';
+                teamUpExplanation.textContent = 'Calculating with boost from Team-Up';
+                
+                // Insert after the combat speed element (same as Chilling)
+                combatSpeedElement.after(teamUpExplanation);
+            }
+        }
+    }
+    
     // Track Lionel's position
     if (selectedMonster.name === 'Lionel') {
         lionelPosition = parseInt(id.replace('friendly', ''));
@@ -641,6 +670,50 @@ function checkForAtbBoost(skillIds, isYeonhong = false) {
             return isAtbBoost && !effect.self_effect;
         });
     });
+}
+
+function hasTeamUpSkill(monster) {
+    if (!monster || !monster.skills || !skillsData) return false;
+    
+    return monster.skills.some(skillId => {
+        const skill = skillsData.find(s => s.id === skillId);
+        if (!skill || !skill.effects) return false;
+        
+        return skill.effects.some(effect => effect.effect.id === 56);
+    });
+}
+
+function isVerdehileInTeam() {
+    const monsterCards = getActiveMonsterCards();
+    
+    return monsterCards.some(card => {
+        const select = card.querySelector('select');
+        if (!select || !select.value) return false;
+        
+        const is2A = select.options[select.selectedIndex].text.includes('(2A)');
+        const monster = getMonsterDetails(select.value, is2A);
+        
+        return monster && monster.name === 'Verdehile';
+    });
+}
+
+function getTeamUpMonsterPosition() {
+    const monsterCards = getActiveMonsterCards();
+    
+    for (let i = 0; i < monsterCards.length; i++) {
+        const card = monsterCards[i];
+        const select = card.querySelector('select');
+        if (!select || !select.value) continue;
+        
+        const is2A = select.options[select.selectedIndex].text.includes('(2A)');
+        const monster = getMonsterDetails(select.value, is2A);
+        
+        if (monster && hasTeamUpSkill(monster)) {
+            return i + 1; // Return 1-based position
+        }
+    }
+    
+    return null;
 }
 
 
@@ -1357,6 +1430,7 @@ function updateElementIds(card, newPosition) {
 }
 
 
+
 function updateSpeedDisplayText() {
     const monsterCards = getActiveMonsterCards();
     const combatSpeedToggle = document.getElementById('cmb-speed-toggle');
@@ -1419,6 +1493,20 @@ function getAccumulatedAtbBoost(currentIndex, targetPosition = null) {
     if (currentIndex >= maxMonsters - 1 || (targetPosition && targetPosition > maxMonsters)) {
         return 0;
     }
+    
+    // Check for team-up + Verdehile condition (applies team-wide)
+    let verdehileTeamUpBoost = 0;
+    const teamUpPosition = getTeamUpMonsterPosition();
+    const currentMonsterPosition = currentIndex + 1; // Convert to 1-based position
+    
+    // Apply Verdehile boost to ALL monsters if:
+    // 1. There's a team-up monster in the team
+    // 2. Verdehile is in the team  
+    // 3. Current monster's turn comes AFTER the team-up monster's turn
+    if (teamUpPosition && isVerdehileInTeam() && currentMonsterPosition > teamUpPosition) {
+        verdehileTeamUpBoost = 40; // Verdehile's standard ATB boost applies to everyone
+    }
+    
     for(let i = 0; i <= currentIndex; i++) {
         const monsterBoost = parseFloat(document.getElementById(`friendly${i+1}-atb-boost`).value) || 0;
         
@@ -1444,6 +1532,10 @@ function getAccumulatedAtbBoost(currentIndex, targetPosition = null) {
             totalBoost += monsterBoost;
         }
     }
+    
+    // Add Verdehile team-up boost if conditions are met
+    totalBoost += verdehileTeamUpBoost;
+    
     return totalBoost;
 }
 
