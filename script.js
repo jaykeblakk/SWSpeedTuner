@@ -1661,7 +1661,7 @@ function recalculateTeamSpeeds() {
         boosterCombatSpeed = boosterCombatSpeed + 40;
         isChilling = true;
     }
-    if (boosterMonster && boosterMonster.name === "Kroa") {
+    if (boosterMonster && (boosterMonster.name === "Kroa" || boosterMonster.name === "Ramael and Judiah" || boosterMonster.name === "Yeji and Sapsaree")) {
         isKroa = true;
     }
     boosterCard.querySelector('.combat-speed').textContent = `Combat Speed: ${boosterCombatSpeed}`;
