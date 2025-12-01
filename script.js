@@ -149,15 +149,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function checkForMiriam() {
-    const monsterCards = Array.from(document.querySelectorAll('.monster'));
-    const hasMiriam = monsterCards.some(card => {
-        const monsterId = card.querySelector('select').id;
-        const monster = getMonsterDetails(document.getElementById(monsterId).value);
+function hasMiriam() {
+    const monsterCards = getActiveMonsterCards();
+    return monsterCards.some(card => {
+        const select = card.querySelector('select');
+        if (!select || !select.value) return false;
+        
+        const is2A = select.options[select.selectedIndex].text.includes('(2A)');
+        const monster = getMonsterDetails(select.value, is2A);
         return monster && monster.name === "Miriam";
     });
-    
-    SPDBoostConstant = hasMiriam ? 0.405 : 0.3;
+}
+
+function checkForMiriam() {
+    // Keep this function for backwards compatibility, but it no longer changes SPDBoostConstant
+    // SPDBoostConstant remains at 0.3
 }
 
 
@@ -1601,7 +1607,9 @@ function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConst
     console.log(`baseSpeed: ${baseSpeed}`);
     console.log(`isSwift: ${isSwift}`);
     console.log(`applyModifier: ${applyModifier}`);
-    const speedModifier = 1 + SPDBoostConstant * (1 + artiSpeedSum / 100);
+    // If Miriam is present, add 0.35 to the artifact speed calculation
+    const miriamBonus = hasMiriam() ? 0.35 : 0;
+    const speedModifier = 1 + SPDBoostConstant * (1 + miriamBonus + artiSpeedSum / 100);
     let atbPerTick = Math.ceil((1.15 + leadSkill / 100) * baseBooster + runeSpeedBooster);
     if (isChilling)
         {
@@ -1638,6 +1646,7 @@ function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConst
 
 function recalculateTeamSpeeds() {
     checkForMiriam();
+    const miriamBonus = hasMiriam() ? 0.35 : 0;
     const monsterCards = Array.from(document.querySelectorAll('.monster'));
     const activeMonsterIds = getActiveMonsterIds();
     const teamSpeedLead = getSpeedLead(activeMonsterIds);
@@ -1661,7 +1670,7 @@ function recalculateTeamSpeeds() {
         boosterCombatSpeed = boosterCombatSpeed + 40;
         isChilling = true;
     }
-    if (boosterMonster && (boosterMonster.name === "Kroa" || boosterMonster.name === "Ramael and Judiah" || boosterMonster.name === "Yeji and Sapsaree")) {
+    if (boosterMonster && boosterMonster.name === "Kroa") {
         isKroa = true;
     }
     boosterCard.querySelector('.combat-speed').textContent = `Combat Speed: ${boosterCombatSpeed}`;
@@ -1832,8 +1841,8 @@ function recalculateTeamSpeeds() {
                 monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
                 monster2combatspeed = Math.ceil(monster2tunedspeed + monster2rawspeed);
                 boosterTick = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
-                mon2efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
-                monster2tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster2combatspeed);
+                mon2efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))));
+                monster2tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))))) * monster2combatspeed);
                 monster2basespeed = monster.speed;
                 }
             if (thisMonsterPosition === 3) {
@@ -1854,10 +1863,10 @@ function recalculateTeamSpeeds() {
                 console.log(`monster2combatspeed: ${monster2combatspeed}`);
                 console.log(`mon2efftick: ${mon2efftick}`);
                 boosterTick = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
-                monster3tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster3combatspeed);
+                monster3tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))))) * monster3combatspeed);
                 console.log(`monster3tfnumber: ${monster3tfnumber}`);
                 console.log(`monster2tfnumber: ${monster2tfnumber}`);
-                mon3efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))));
+                mon3efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))));
                 
                 // In 3-monster mode, check for Monster 3 vs Monster 2 conflicts (since Monster 4 logic won't run)
                 if (maxMonsters === 3) {
@@ -1934,7 +1943,7 @@ function recalculateTeamSpeeds() {
                 console.log(`monster3combatspeed: ${monster3combatspeed}`);
                 console.log(`monster2combatspeed: ${monster2combatspeed}`);
                 boosterTick = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
-                monster4tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + (artiSpeed / 100))))) * monster4combatspeed);
+                monster4tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))))) * monster4combatspeed);
                 console.log(`monster4tfnumber: ${monster4tfnumber}`);
                 console.log(`monster3tfnumber: ${monster3tfnumber}`);
                 console.log(`monster2tfnumber: ${monster2tfnumber}`);
