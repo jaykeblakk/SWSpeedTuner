@@ -208,10 +208,19 @@ function populateDropdowns(monsters) {
             monsters
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((monster) => {
-                    const displayName =
-                        monster.awaken_level === 2 ? `${monster.name} (2A)`
-                            : nameCount[monster.name] > 1 ? `${monster.name} (${monster.element})`
-                              : monster.name;
+                    // Check if this is a ROBO unit (name contains "ROBO")
+                    const isROBO = monster.name.toUpperCase().includes('ROBO');
+                    
+                    let displayName;
+                    if (monster.awaken_level === 2) {
+                        // For awakened monsters, show (2A)
+                        displayName = `${monster.name} (2A)`;
+                    } else if (nameCount[monster.name] > 1 || isROBO) {
+                        // For non-awakened monsters with duplicate names OR ROBO units, show element
+                        displayName = `${monster.name} (${monster.element})`;
+                    } else {
+                        displayName = monster.name;
+                    }
 
                     return `<option value="${monster.name}|${monster.element}">${displayName}</option>`;
                 })
@@ -1852,6 +1861,7 @@ function recalculateTeamSpeeds() {
         if (isKroa) {
             console.log(``);
             console.log(`Monster: ${monster.name}`);
+            console.log(`Miriam Bonus: ${miriamBonus > 0 ? 'Active (' + miriamBonus + ')' : 'Inactive'}`);
             
             // Check if this monster should receive Kroa's ATB boost
             let shouldReceiveKroaBoost = false;
@@ -1921,6 +1931,7 @@ function recalculateTeamSpeeds() {
             if (thisMonsterPosition === 2) {
                 // Calculating Monster 2's speed
                 console.log(`Monster: ${monster.name}`);
+                console.log(`Miriam Bonus: ${miriamBonus > 0 ? 'Active (' + miriamBonus + ')' : 'Inactive'}`);
                 monster2tunedspeed = tunedSpeed;
                 if (speedLeadPosition && 2 < speedLeadPosition) {
                     monster2tunedspeed += 1;
@@ -1935,6 +1946,7 @@ function recalculateTeamSpeeds() {
             if (thisMonsterPosition === 3) {
                 // Monster 3 calculations
                 console.log(`Monster: ${monster.name}`);
+                console.log(`Miriam Bonus: ${miriamBonus > 0 ? 'Active (' + miriamBonus + ')' : 'Inactive'}`);
                 monster3tunedspeed = tunedSpeed;
                 
                 // Apply speed lead adjustment BEFORE combat speed calculation (like Monster 2)
@@ -1997,6 +2009,7 @@ function recalculateTeamSpeeds() {
             if (thisMonsterPosition === 4) {
                 // Monster 4 calculations
                 console.log(`Monster 4: ${monster.name}`);
+                console.log(`Miriam Bonus: ${miriamBonus > 0 ? 'Active (' + miriamBonus + ')' : 'Inactive'}`);
                 console.log(`Monster 4 base speed: ${monster.speed}`);
                 console.log(`Monster 2 base speed: ${monster2basespeed}`);
                 console.log(`Monster 4 tunedSpeed from calculation: ${tunedSpeed}`);
