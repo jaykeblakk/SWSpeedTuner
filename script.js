@@ -682,7 +682,10 @@ function updateMonster(id) {
     if (id === 'friendly1') {
         const hasSpeedBuff = selectedMonster.skills.some(skillId => {
             const skill = skillsData.find(s => s.id === skillId);
-            return skill && skill.effects.some(effect => effect.effect.id === 5);
+            // Only include speed buff if it's not self-only (same logic as ATB boost)
+            return skill && skill.effects.some(effect => 
+                effect.effect.id === 5 && !effect.self_effect
+            );
         });
         
         // Get all artifact speed inputs and containers
@@ -1672,9 +1675,12 @@ function getEffectsByPosition() {
             hasSpeedBuff = selectedSkill === '3';
         } else {
             // Normal case for other monsters
+            // Only include speed buff if it's not self-only (same logic as ATB boost)
             hasSpeedBuff = monster.skills.some(skillId => {
                 const skill = skillsData.find(s => s.id === skillId);
-                return skill && skill.effects.some(effect => effect.effect.id === 5);
+                return skill && skill.effects.some(effect => 
+                    effect.effect.id === 5 && !effect.self_effect
+                );
             });
         }
         
@@ -2175,8 +2181,17 @@ function getBoosterEffectTypes(boosterId) {
         const skill = skillsData.find(s => s.id === skillId);
         if (skill && skill.effects) {
             skill.effects.forEach(effect => {
-                if (effect.effect.id === 5 || effect.effect.id === 17) {
+                // For speed buff (ID 5), only include if not self-only (same logic as ATB boost)
+                // For ATB boost (ID 17), checkForAtbBoost already handles self_effect filtering
+                if (effect.effect.id === 5 && !effect.self_effect) {
                     effectIds.push(effect.effect.id);
+                } else if (effect.effect.id === 17) {
+                    // ATB boost filtering is handled by checkForAtbBoost, but we need to check here too
+                    // For consistency, we'll check self_effect here as well
+                    const isYeonhong = boosterMonster.name === "Yeonhong";
+                    if (isYeonhong || !effect.self_effect) {
+                        effectIds.push(effect.effect.id);
+                    }
                 }
             });
         }
