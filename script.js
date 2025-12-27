@@ -169,7 +169,7 @@ function checkForMiriam() {
 
 // Load the JSON data
 function fetchMonsters() {
-    fetch('./monsters.json')
+    fetch(`./monsters.json?v=${Date.now()}`)
       .then(res => res.json())
       .then(monsters => {
         const filtered = monsters.filter(m => m.obtainable && m.archetype !== "Material");
@@ -179,7 +179,7 @@ function fetchMonsters() {
 }
 
 function fetchSkills() {
-    fetch('./skills.json')
+    fetch(`./skills.json?v=${Date.now()}`)
         .then(response => response.json())
         .then(data => {
             skillsData = data;
@@ -605,6 +605,79 @@ function updateMonster(id) {
         atbBoostContainer.style.display = 'none';
     }
     
+    // Handle Layla's effect on the booster (Monster 1)
+    // If Layla is in the team, show and set ATB boost for friendly1 (only if booster has no natural boost)
+    const laylaPresent = isLaylaInTeam();
+    const boosterAtbContainer = document.getElementById('friendly1-atb-boost-container');
+    const boosterAtbInput = document.getElementById('friendly1-atb-boost');
+    
+    if (laylaPresent && boosterAtbContainer && boosterAtbInput) {
+        const boosterSelect = document.getElementById('friendly1');
+        if (boosterSelect && boosterSelect.value) {
+            const isBooster2A = boosterSelect.options[boosterSelect.selectedIndex].text.includes('(2A)');
+            const boosterMonster = getMonsterDetails(boosterSelect.value, isBooster2A);
+            
+            if (boosterMonster) {
+                // Check if booster naturally has ATB boost
+                const isBoosterYeonhong = boosterMonster.name === "Yeonhong";
+                const isBoosterCraig = boosterMonster.name === "Craig";
+                const isBoosterMBisonLight = boosterMonster.name === "M. Bison" && boosterMonster.element === "Light";
+                const isBoosterVerdehile = boosterMonster.name === "Verdehile";
+                const isBoosterJeogun = boosterMonster.name === "Jeogun";
+                const isBoosterMihyang = boosterMonster.name === "Mihyang";
+                const boosterHasNaturalAtbBoost = checkForAtbBoost(boosterMonster.skills, isBoosterYeonhong);
+                
+                // Only apply Layla's boost if booster doesn't have a natural ATB boost
+                if (!boosterHasNaturalAtbBoost && !isBoosterCraig && !isBoosterMBisonLight && !isBoosterVerdehile && !isBoosterJeogun && !isBoosterMihyang) {
+                    boosterAtbContainer.style.display = 'block';
+                    boosterAtbInput.value = 20;
+                }
+                // If booster has natural boost, the existing logic above already handled it
+            } else {
+                // No monster selected in slot 1, show Layla's boost
+                boosterAtbContainer.style.display = 'block';
+                boosterAtbInput.value = 20;
+            }
+        } else {
+            // No monster selected in slot 1, show Layla's boost
+            boosterAtbContainer.style.display = 'block';
+            boosterAtbInput.value = 20;
+        }
+    } else if (!laylaPresent && boosterAtbContainer && boosterAtbInput) {
+        // Layla is not in team - check if booster should still show ATB boost
+        const boosterSelect = document.getElementById('friendly1');
+        if (boosterSelect && boosterSelect.value) {
+            const isBooster2A = boosterSelect.options[boosterSelect.selectedIndex].text.includes('(2A)');
+            const boosterMonster = getMonsterDetails(boosterSelect.value, isBooster2A);
+            
+            if (boosterMonster) {
+                // Re-check if booster naturally has ATB boost
+                const isBoosterYeonhong = boosterMonster.name === "Yeonhong";
+                const isBoosterCraig = boosterMonster.name === "Craig";
+                const isBoosterMBisonLight = boosterMonster.name === "M. Bison" && boosterMonster.element === "Light";
+                const isBoosterVerdehile = boosterMonster.name === "Verdehile";
+                const isBoosterJeogun = boosterMonster.name === "Jeogun";
+                const isBoosterMihyang = boosterMonster.name === "Mihyang";
+                const boosterHasNaturalAtbBoost = checkForAtbBoost(boosterMonster.skills, isBoosterYeonhong);
+                
+                // If booster doesn't have natural boost, hide the container (Layla's boost is gone)
+                if (!boosterHasNaturalAtbBoost && !isBoosterCraig && !isBoosterMBisonLight && !isBoosterVerdehile && !isBoosterJeogun && !isBoosterMihyang) {
+                    boosterAtbContainer.style.display = 'none';
+                    boosterAtbInput.value = 0;
+                }
+                // If booster has natural boost, it should already be visible from the normal logic above
+            } else {
+                // No monster, hide the container
+                boosterAtbContainer.style.display = 'none';
+                boosterAtbInput.value = 0;
+            }
+        } else {
+            // No monster selected, hide the container
+            boosterAtbContainer.style.display = 'none';
+            boosterAtbInput.value = 0;
+        }
+    }
+    
     // Handle speed buff for artifacts
     if (id === 'friendly1') {
         const hasSpeedBuff = selectedMonster.skills.some(skillId => {
@@ -709,6 +782,20 @@ function isVerdehileInTeam() {
         const monster = getMonsterDetails(select.value, is2A);
         
         return monster && monster.name === 'Verdehile';
+    });
+}
+
+function isLaylaInTeam() {
+    const monsterCards = getActiveMonsterCards();
+    
+    return monsterCards.some(card => {
+        const select = card.querySelector('select');
+        if (!select || !select.value) return false;
+        
+        const is2A = select.options[select.selectedIndex].text.includes('(2A)');
+        const monster = getMonsterDetails(select.value, is2A);
+        
+        return monster && monster.name === 'Layla';
     });
 }
 
