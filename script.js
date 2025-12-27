@@ -1252,7 +1252,12 @@ function initializeDraggableCards() {
 
             moveAt(e.pageX, e.pageY);
 
-            const cardsArray = Array.from(row.querySelectorAll('.monster:not(.dragging):not(.placeholder)'));
+            // Only consider visible cards (not hidden ones) and limit to maxMonsters
+            const allCards = Array.from(row.querySelectorAll('.monster:not(.dragging):not(.placeholder)'));
+            const cardsArray = allCards
+                .filter(card => card.style.display !== 'none')
+                .slice(0, maxMonsters);
+            
             let inserted = false;
 
             for (const otherCard of cardsArray) {
@@ -1267,7 +1272,15 @@ function initializeDraggableCards() {
             }
 
             if (!inserted) {
-                row.appendChild(placeholder);
+                // Only append after the last visible card, not after hidden cards
+                if (cardsArray.length > 0) {
+                    const lastVisibleCard = cardsArray[cardsArray.length - 1];
+                    // Insert after the last visible card (before its next sibling, or at end if no sibling)
+                    row.insertBefore(placeholder, lastVisibleCard.nextSibling);
+                } else {
+                    // Fallback: append to row (shouldn't happen in normal use)
+                    row.appendChild(placeholder);
+                }
             }
         }
 
@@ -1293,8 +1306,11 @@ function mouseUp() {
     placeholder.remove();
     placeholder = null;
 
-    // Get all cards in their new order
-    const allCards = Array.from(row.querySelectorAll('.monster'));
+    // Get all cards in their new order, but only include visible cards (respect maxMonsters)
+    // Filter out hidden cards and limit to maxMonsters to prevent processing hidden 4th monster
+    const allCards = Array.from(row.querySelectorAll('.monster'))
+        .filter(card => card.style.display !== 'none')
+        .slice(0, maxMonsters);
     
     // Store the current state of all monsters before updating IDs
     const monsterStates = allCards.map(card => {
