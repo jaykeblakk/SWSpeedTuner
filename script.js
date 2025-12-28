@@ -1960,6 +1960,40 @@ function recalculateTeamSpeeds() {
                 }
                 monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
                 monster2combatspeed = Math.ceil(monster2tunedspeed + monster2rawspeed);
+                
+                // Check if Monster 2 is faster than the booster and needs adjustment
+                if (monster2combatspeed > boosterCombatSpeed && !adjustedMonsters.has(2)) {
+                    console.log(`Adjusting Monster 2 due to booster conflict`);
+                    console.log(`Original Monster 2 combat speed: ${monster2combatspeed}`);
+                    console.log(`Booster combat speed: ${boosterCombatSpeed}`);
+                    
+                    // Adjust Monster 2 to match booster's exact combat speed
+                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                    const requiredCombatSpeed = boosterCombatSpeed; // Same combat speed as booster
+                    let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead);
+                    
+                    if (finalspeed <= 0) {
+                        finalspeed = 0; 
+                    }
+                    
+                    // Update Monster 2's display
+                    const monster2Card = monsterCards[1];
+                    if (isShowCombatSpeed) {
+                        const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                        const totalCombatSpeed = Math.ceil(baseSpeedWithLead + finalspeed);
+                        monster2Card.querySelector('.combat-speed').textContent = `Combat Speed: ${totalCombatSpeed}`;
+                    } else {
+                        monster2Card.querySelector('.combat-speed').textContent = `Speed Needed: ${finalspeed}`;
+                    }
+                    
+                    // Mark Monster 2 as adjusted and update combat speed
+                    adjustedMonsters.add(2);
+                    monster2combatspeed = boosterCombatSpeed; // Now same speed as booster
+                    monster2tunedspeed = finalspeed; // Update tuned speed as well
+                    
+                    console.log(`Monster 2 adjusted to match booster's combat speed: ${finalspeed}`);
+                }
+                
                 boosterTick = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
                 mon2efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))));
                 monster2tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))))) * monster2combatspeed);
