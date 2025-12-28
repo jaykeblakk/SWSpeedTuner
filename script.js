@@ -2202,18 +2202,24 @@ function recalculateTeamSpeeds() {
                     tunedSpeed = 0;
                 }
             
-            // For follow-up monsters (not the booster), check if we should show combat speed
-            if (isShowCombatSpeed && thisMonsterPosition > 1) {
-                const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
-                const totalCombatSpeed = Math.ceil(baseSpeedWithLead + tunedSpeed);
-                card.querySelector('.combat-speed').textContent = `Combat Speed: ${totalCombatSpeed}`;
+            // Skip display update if this monster was already adjusted (to prevent overwriting the adjusted display)
+            // For Monster 2, check if it was adjusted due to booster conflict
+            if (thisMonsterPosition === 2 && adjustedMonsters.has(2)) {
+                // Display was already updated in the adjustment block, skip the normal update
             } else {
-                // For booster (position 1) always show "Combat Speed", for others check toggle
-                if (thisMonsterPosition === 1) {
-                    card.querySelector('.combat-speed').textContent = `Combat Speed: ${tunedSpeed}`;
+                // For follow-up monsters (not the booster), check if we should show combat speed
+                if (isShowCombatSpeed && thisMonsterPosition > 1) {
+                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                    const totalCombatSpeed = Math.ceil(baseSpeedWithLead + tunedSpeed);
+                    card.querySelector('.combat-speed').textContent = `Combat Speed: ${totalCombatSpeed}`;
                 } else {
-                    // This should never be reached since the toggle logic above handles it
-                    card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+                    // For booster (position 1) always show "Combat Speed", for others check toggle
+                    if (thisMonsterPosition === 1) {
+                        card.querySelector('.combat-speed').textContent = `Combat Speed: ${tunedSpeed}`;
+                    } else {
+                        // This should never be reached since the toggle logic above handles it
+                        card.querySelector('.combat-speed').textContent = `Speed Needed: ${tunedSpeed}`;
+                    }
                 }
             }
         }
