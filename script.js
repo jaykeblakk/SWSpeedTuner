@@ -1880,20 +1880,26 @@ function recalculateTeamSpeeds() {
     
     // Simple booster speed calculation
     const boosterLeadMultiplier = (1.15 + teamSpeedLead/100);
-    const boosterPreCeilCombatSpeed = (boosterLeadMultiplier * boosterBaseSpeed + boosterRuneSpeed);
-
+    
     // --- SWIFT BOOSTER ROUNDING PATCH (easy undo) ---
     // Previous behavior (UNDO by restoring this line):
+    // const boosterPreCeilCombatSpeed = (boosterLeadMultiplier * boosterBaseSpeed + boosterRuneSpeed);
     // let boosterCombatSpeed = Math.ceil(boosterPreCeilCombatSpeed);
     const boosterIsSwift = document.getElementById(`${boosterId}-swift`)?.checked ?? true;
-    let boosterCombatSpeed;
+    let roundedRuneSpeed = boosterRuneSpeed;
+    
+    // Apply Swift rounding to rune speed FIRST (if Swift is checked)
     if (boosterIsSwift) {
-        const swiftNum = boosterPreCeilCombatSpeed % 1;
+        const swiftNum = boosterRuneSpeed % 1;
         const nonSwiftNum = (boosterBaseSpeed % 4) / 4;
-        boosterCombatSpeed = Math.floor(boosterPreCeilCombatSpeed) + (swiftNum > nonSwiftNum ? 1 : 0);
-    } else {
-        boosterCombatSpeed = Math.ceil(boosterPreCeilCombatSpeed);
+        roundedRuneSpeed = Math.floor(boosterRuneSpeed) + (swiftNum > nonSwiftNum ? 1 : 0);
     }
+    
+    // Calculate pre-ceil combat speed with rounded rune speed
+    const boosterPreCeilCombatSpeed = (boosterLeadMultiplier * boosterBaseSpeed + roundedRuneSpeed);
+    
+    // Apply Math.ceil to the entire expression (for both Swift and non-Swift)
+    let boosterCombatSpeed = Math.ceil(boosterPreCeilCombatSpeed);
     // --- END SWIFT BOOSTER ROUNDING PATCH ---
     
     // Restore original teamSpeedLead after booster calculation
