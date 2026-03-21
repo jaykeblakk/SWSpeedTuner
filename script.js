@@ -1037,18 +1037,30 @@ function updateArtifactSpeed(monsterId) {
     // You can add more logic here if needed, such as recalculating total speed
 }
 
-function getSpeedLead(team) {
-    const speedLeads = team.map(id => {
+/** Winning Attack Speed lead (max amount) among active team slots (Siege: friendly1–3). Element matches that monster’s lead. */
+function getSpeedLeadInfo() {
+    let bestAmount = 0;
+    let bestElement = null;
+    const ids = getActiveMonsterIds();
+    for (const id of ids) {
         const select = document.getElementById(id);
-        if (!select) return 0;
-        if (!select.value) return 0;
-        
+        if (!select || !select.value) continue;
         const is2A = select.options[select.selectedIndex].text.includes('(2A)');
-        const selectedMonster = getMonsterDetails(select.value, is2A);
+        const m = getMonsterDetails(select.value, is2A);
         const speedLeadCheckbox = document.getElementById(`${id}-speedlead`);
-        return (selectedMonster && selectedMonster.leader_skill && speedLeadCheckbox.checked) ? selectedMonster.leader_skill.amount : 0;
-    });
-    return Math.max(...speedLeads);
+        const ls = m && m.leader_skill;
+        if (!ls || ls.attribute !== 'Attack Speed' || !speedLeadCheckbox || !speedLeadCheckbox.checked) continue;
+        const amt = ls.amount;
+        if (amt > bestAmount) {
+            bestAmount = amt;
+            bestElement = ls.element;
+        }
+    }
+    return { amount: bestAmount, element: bestElement };
+}
+
+function getSpeedLead() {
+    return getSpeedLeadInfo().amount;
 }
 
 /*function initializeDraggableCards() {
@@ -1775,10 +1787,13 @@ function logMiscChecksBlock(checks) {
     console.groupEnd();
 }
 
-function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true, isChilling = false) {
+/** leadSkillBooster: team speed lead applied to the booster’s ATB (Chilling always gets this if the leader is active). leadSkillFollower: lead on this follower’s base speed (0 if element-restricted lead does not apply to them). */
+function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true, isChilling = false, leadSkillFollower = null) {
+    const leadFollower = leadSkillFollower === null || leadSkillFollower === undefined ? leadSkillBooster : leadSkillFollower;
     // --- Previous logging (kept, but commented out as requested) ---
     // console.log(``);
-    // console.log(`leadSkill: ${leadSkill}`);
+    // console.log(`leadSkillBooster: ${leadSkillBooster}`);
+    // console.log(`leadFollower: ${leadFollower}`);
     // console.log(`baseBooster: ${baseBooster}`);
     // console.log(`runeSpeedBooster: ${runeSpeedBooster}`);
     // console.log(`tickConstant: ${tickConstant}`);
@@ -1792,7 +1807,7 @@ function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConst
     // If Miriam is present, add 0.35 to the artifact speed calculation
     const miriamBonus = hasMiriam() ? 0.35 : 0;
     const speedModifier = 1 + SPDBoostConstant * (1 + miriamBonus + artiSpeedSum / 100);
-    let atbPerTick = Math.ceil((1.15 + leadSkill / 100) * baseBooster + runeSpeedBooster);
+    let atbPerTick = Math.ceil((1.15 + leadSkillBooster / 100) * baseBooster + runeSpeedBooster);
     if (isChilling) {
         // console.log(`Chilling loop adding 40 to cmb speed.`);
         atbPerTick = atbPerTick + 40;
@@ -1804,7 +1819,7 @@ function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConst
     // console.log(`Denominator: ${denominator}`);
 
     const result = numerator / denominator;
-    let speedResult = Math.floor(result) - baseSpeed * (1.15 + leadSkill / 100);
+    let speedResult = Math.floor(result) - baseSpeed * (1.15 + leadFollower / 100);
 
     let swiftAdjustment = false;
     if (isSwift) {
@@ -1818,8 +1833,8 @@ function calculateTunedSpeed(leadSkill, baseBooster, runeSpeedBooster, tickConst
     }
 
     const tunedSpeed = swiftAdjustment
-        ? Math.ceil(Math.floor((numerator / denominator)) + 0.0001 - baseSpeed * (1.15 + leadSkill / 100) + 1)
-        : Math.ceil(Math.floor((numerator / denominator)) + 0.0001 - baseSpeed * (1.15 + leadSkill / 100));
+        ? Math.ceil(Math.floor((numerator / denominator)) + 0.0001 - baseSpeed * (1.15 + leadFollower / 100) + 1)
+        : Math.ceil(Math.floor((numerator / denominator)) + 0.0001 - baseSpeed * (1.15 + leadFollower / 100));
 
     return {
         tunedSpeed,
@@ -1832,26 +1847,12 @@ function recalculateTeamSpeeds() {
     checkForMiriam();
     const miriamBonus = hasMiriam() ? 0.35 : 0;
     const monsterCards = Array.from(document.querySelectorAll('.monster'));
-    const activeMonsterIds = getActiveMonsterIds();
-    let teamSpeedLead = getSpeedLead(activeMonsterIds);
-    
-    // Get the element restriction for the active speed lead (if any)
-    let speedLeadElement = null;
-    activeMonsterIds.forEach(id => {
-        const select = document.getElementById(id);
-        if (!select || !select.value) return;
-        
-        const is2A = select.options[select.selectedIndex].text.includes('(2A)');
-        const leaderMonster = getMonsterDetails(select.value, is2A);
-        const speedLeadCheckbox = document.getElementById(`${id}-speedlead`);
-        
-        if (leaderMonster && leaderMonster.leader_skill && speedLeadCheckbox && speedLeadCheckbox.checked) {
-            speedLeadElement = leaderMonster.leader_skill.element; // Will be null or an element
-        }
-    });
+    const speedLeadResolved = getSpeedLeadInfo();
+    let teamSpeedLead = speedLeadResolved.amount;
+    let speedLeadElement = speedLeadResolved.element;
     
     // Bool: does the speed lead have an element restriction?
-    const hasElementRestriction = speedLeadElement !== null;
+    const hasElementRestriction = speedLeadElement != null;
     
     // Get booster's stats
     const boosterCard = monsterCards[0];
@@ -1881,26 +1882,8 @@ function recalculateTeamSpeeds() {
     // Simple booster speed calculation
     const boosterLeadMultiplier = (1.15 + teamSpeedLead/100);
     
-    // --- SWIFT BOOSTER ROUNDING PATCH (easy undo) ---
-    // Previous behavior (UNDO by restoring this line):
-    // const boosterPreCeilCombatSpeed = (boosterLeadMultiplier * boosterBaseSpeed + boosterRuneSpeed);
-    // let boosterCombatSpeed = Math.ceil(boosterPreCeilCombatSpeed);
-    const boosterIsSwift = document.getElementById(`${boosterId}-swift`)?.checked ?? true;
-    let roundedRuneSpeed = boosterRuneSpeed;
-    
-    // Apply Swift rounding to rune speed FIRST (if Swift is checked)
-    if (boosterIsSwift) {
-        const swiftNum = boosterRuneSpeed % 1;
-        const nonSwiftNum = (boosterBaseSpeed % 4) / 4;
-        roundedRuneSpeed = Math.floor(boosterRuneSpeed) + (swiftNum > nonSwiftNum ? 1 : 0);
-    }
-    
-    // Calculate pre-ceil combat speed with rounded rune speed
-    const boosterPreCeilCombatSpeed = (boosterLeadMultiplier * boosterBaseSpeed + roundedRuneSpeed);
-    
-    // Apply Math.ceil to the entire expression (for both Swift and non-Swift)
+    const boosterPreCeilCombatSpeed = (boosterLeadMultiplier * boosterBaseSpeed + boosterRuneSpeed);
     let boosterCombatSpeed = Math.ceil(boosterPreCeilCombatSpeed);
-    // --- END SWIFT BOOSTER ROUNDING PATCH ---
     
     // Restore original teamSpeedLead after booster calculation
     teamSpeedLead = originalTeamSpeedLead;
@@ -2066,7 +2049,7 @@ function recalculateTeamSpeeds() {
             
             accumulatedAtbBoost = shouldReceiveKroaBoost ? accumulatedAtbBoost : 0;
             const tunedCalc = calculateTunedSpeed(
-                teamSpeedLead,
+                savedTeamSpeedLead,
                 boosterBaseSpeed,
                 boosterRuneSpeed,
                 getTickConstant(),
@@ -2076,7 +2059,8 @@ function recalculateTeamSpeeds() {
                 monster.speed,
                 isSwift,
                 speedBuffActive,
-                isChilling
+                isChilling,
+                teamSpeedLead
             );
             let tunedSpeed = tunedCalc.tunedSpeed;
 
@@ -2123,7 +2107,7 @@ function recalculateTeamSpeeds() {
             // (removed noisy iteration debug logging)
             
             const tunedCalc = calculateTunedSpeed(
-                teamSpeedLead,
+                savedTeamSpeedLead,
                 boosterBaseSpeed,
                 boosterRuneSpeed,
                 getTickConstant(),
@@ -2133,7 +2117,8 @@ function recalculateTeamSpeeds() {
                 monster.speed,
                 isSwift,
                 speedBuffActive,
-                isChilling
+                isChilling,
+                teamSpeedLead
             );
             let tunedSpeed = tunedCalc.tunedSpeed;
 
