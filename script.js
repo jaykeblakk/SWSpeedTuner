@@ -195,6 +195,33 @@ function getMonsterDetails(monsterValue, is2A = false) {
     return monsterData.find(m => m.name === name && m.element === element && m.awaken_level !== 2);
 }
 
+/** Returns the flat speed bonus applied at the end of calculations for special monsters.
+ *  Shumar: +25 (2A) or +15. Chilling: +40 (Will + Shield buffs always active). */
+function getFollowerFlatBonus(monster, is2A) {
+    if (!monster) return 0;
+    if (monster.name === 'Shumar') return is2A ? 25 : 15;
+    if (monster.name === 'Chilling') return 40;
+    return 0;
+}
+
+/** @deprecated use getFollowerFlatBonus */
+function shumarPassiveBaseBonus(monster, is2A) {
+    return getFollowerFlatBonus(monster, is2A);
+}
+
+// Prevent Choices.js from scrolling the page when opening a dropdown with
+// a pre-selected item. Choices calls scrollIntoView() on the highlighted
+// choice, which can bubble up and move the window scroll position.
+function preventChoicesScroll(selectEl) {
+    selectEl.addEventListener('showDropdown', function() {
+        const original = HTMLElement.prototype.scrollIntoView;
+        HTMLElement.prototype.scrollIntoView = function() {};
+        requestAnimationFrame(() => {
+            HTMLElement.prototype.scrollIntoView = original;
+        });
+    });
+}
+
 function populateDropdowns(monsters) {
     const nameCount = {};
     monsters.forEach((m) => {
@@ -260,6 +287,9 @@ function populateDropdowns(monsters) {
         
         // Store the Choices instance on the select element for later reference
         select.choicesInstance = choices;
+
+        // Prevent Choices.js from scrolling the page when the dropdown opens
+        preventChoicesScroll(select);
         
         // Add keydown event listener to handle Enter key
         choices.input.element.addEventListener('keydown', function(e) {
@@ -484,8 +514,8 @@ function updateMonster(id) {
         existingExplanation.remove();
     }
     
-    // Add Chilling explanation text if this is Chilling AND in slot 1
-    if (selectedMonster.name === 'Chilling' && position === 1) {
+    // Add Chilling explanation text if this is Chilling (any slot)
+    if (selectedMonster.name === 'Chilling') {
         const combatSpeedElement = monsterCard.querySelector('.combat-speed');
         const chillingExplanation = document.createElement('p');
         chillingExplanation.className = 'chilling-explanation';
@@ -497,7 +527,7 @@ function updateMonster(id) {
         const combatSpeedElement = monsterCard.querySelector('.combat-speed');
         const shumarExplanation = document.createElement('p');
         shumarExplanation.className = 'chilling-explanation';
-        shumarExplanation.textContent = 'passive included in base speed';
+        shumarExplanation.textContent = 'passive included in calculations';
         combatSpeedElement.after(shumarExplanation);
     }
     
@@ -539,8 +569,7 @@ function updateMonster(id) {
     
     // Update name and speed
     document.getElementById(`${id}-name`).textContent = selectedMonster.name;
-    let displaySpeed = selectedMonster.speed;
-    if (selectedMonster.name === 'Shumar') displaySpeed += 25;
+    const displaySpeed = selectedMonster.speed;
     document.getElementById(`${id}-speed`).textContent = displaySpeed;
     
     // Set monster image based on awakening status
@@ -1444,6 +1473,9 @@ function mouseUp() {
             
             // Store the new Choices instance
             newSelect.choicesInstance = choices;
+
+            // Prevent Choices.js from scrolling the page when the dropdown opens
+            preventChoicesScroll(newSelect);
             
             // Add keydown event listener to handle Enter key
             choices.input.element.addEventListener('keydown', function(e) {
@@ -1868,8 +1900,7 @@ function recalculateTeamSpeeds() {
     const boosterSelect = document.getElementById(boosterId);
     const isBooster2A = boosterSelect.options[boosterSelect.selectedIndex].text.includes('(2A)');
     const boosterMonster = getMonsterDetails(boosterSelect.value, isBooster2A);
-    let boosterBaseSpeed = boosterMonster ? boosterMonster.speed : 0;
-    if (boosterMonster && boosterMonster.name === 'Shumar') boosterBaseSpeed += 25;
+    let boosterBaseSpeed = (boosterMonster ? boosterMonster.speed : 0);
     const boosterRuneSpeed = parseInt(document.getElementById(`${boosterId}-rune-speed`).value) || 0;
     const boosterAtbBoost = parseFloat(document.getElementById(`${boosterId}-atb-boost`).value) || 0;
     let isKroa = false;
@@ -1902,6 +1933,8 @@ function recalculateTeamSpeeds() {
         boosterCombatSpeed = boosterCombatSpeed + boosterChillingBonus;
         isChilling = true;
     }
+    const boosterShumarBonus = shumarPassiveBaseBonus(boosterMonster, isBooster2A);
+    boosterCombatSpeed += boosterShumarBonus;
     if (boosterMonster && boosterMonster.name === "Kroa") {
         isKroa = true;
     }
@@ -1963,6 +1996,9 @@ function recalculateTeamSpeeds() {
     monster2basespeed = null;
     monster3basespeed = null;
     monster4basespeed = null;
+    let monster2flatBonus = 0;
+    let monster3flatBonus = 0;
+    let monster4flatBonus = 0;
     mon2efftick = null;
     mon3efftick = null;
     
@@ -1997,7 +2033,7 @@ function recalculateTeamSpeeds() {
         const monster = getMonsterDetails(monsterSelect.value, isMonster2A);
         if (!monster) return;
         let baseSpeed = monster.speed;
-        if (monster.name === 'Shumar') baseSpeed += 25;
+        const followerFlatBonus = getFollowerFlatBonus(monster, isMonster2A);
         
         // Check if element matches (only if there's a restriction)
         let matchingElementCheck = true;
@@ -2074,6 +2110,7 @@ function recalculateTeamSpeeds() {
                 teamSpeedLead
             );
             let tunedSpeed = tunedCalc.tunedSpeed;
+            tunedSpeed -= followerFlatBonus;
 
             // Organized COMBAT SPEED logging for Monsters 2, 3, and 4
             if ((maxMonsters >= 3 && (thisMonsterPosition === 2 || thisMonsterPosition === 3)) || 
@@ -2132,6 +2169,7 @@ function recalculateTeamSpeeds() {
                 teamSpeedLead
             );
             let tunedSpeed = tunedCalc.tunedSpeed;
+            tunedSpeed -= followerFlatBonus;
 
             // Organized COMBAT SPEED logging for Monsters 2, 3, and 4
             if ((maxMonsters >= 3 && (thisMonsterPosition === 2 || thisMonsterPosition === 3)) || 
@@ -2169,7 +2207,8 @@ function recalculateTeamSpeeds() {
                     monster2tunedspeed += 1;
                 }
                 monster2rawspeed = (1.15 + teamSpeedLead/100) * baseSpeed;
-                monster2combatspeed = Math.ceil(monster2tunedspeed + monster2rawspeed);
+                monster2flatBonus = followerFlatBonus;
+                monster2combatspeed = Math.ceil(monster2tunedspeed + monster2rawspeed) + monster2flatBonus;
                 
                 // Check if Monster 2 is faster than the booster and needs adjustment
                 if (monster2combatspeed > boosterCombatSpeed && !adjustedMonsters.has(2)) {
@@ -2180,7 +2219,7 @@ function recalculateTeamSpeeds() {
                     // Adjust Monster 2 to match booster's exact combat speed
                     const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * baseSpeed;
                     const requiredCombatSpeed = boosterCombatSpeed; // Same combat speed as booster
-                    let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead);
+                    let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead) - monster2flatBonus;
                     
                     if (finalspeed <= 0) {
                         finalspeed = 0; 
@@ -2221,7 +2260,8 @@ function recalculateTeamSpeeds() {
                 }
                 
                 monster3rawspeed = (1.15 + teamSpeedLead/100) * baseSpeed;
-                monster3combatspeed = Math.ceil(monster3tunedspeed + monster3rawspeed);
+                monster3flatBonus = followerFlatBonus;
+                monster3combatspeed = Math.ceil(monster3tunedspeed + monster3rawspeed) + monster3flatBonus;
                 monster3basespeed = baseSpeed;
                 // console.log(``);
                 // console.log(`monster3combatspeed: ${monster3combatspeed}`);
@@ -2260,7 +2300,7 @@ function recalculateTeamSpeeds() {
                         
                         const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster2basespeed;
                         const requiredCombatSpeed = monster3combatspeed; // Same combat speed as Monster 3
-                        let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead);
+                        let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead) - monster2flatBonus;
                         
                         // Remove +1 speed adjustment - keep speeds exactly the same
                         // if (speedLeadPosition && 2 < speedLeadPosition) {
@@ -2320,7 +2360,8 @@ function recalculateTeamSpeeds() {
                 monster4rawspeed = (1.15 + teamSpeedLead/100) * baseSpeed;
                 // console.log(`Monster 4 Raw Speed calculation: (1.15 + ${teamSpeedLead}/100) * ${baseSpeed} = ${monster4rawspeed}`);
                 // console.log(`Monster 4 Combat Speed calculation: Math.ceil(${monster4tunedspeed} + ${monster4rawspeed}) = ${Math.ceil(monster4tunedspeed + monster4rawspeed)}`);
-                monster4combatspeed = Math.ceil(monster4tunedspeed + monster4rawspeed);
+                monster4flatBonus = followerFlatBonus;
+                monster4combatspeed = Math.ceil(monster4tunedspeed + monster4rawspeed) + monster4flatBonus;
                 monster4basespeed = baseSpeed;
                 // console.log(``);
                 // console.log(`monster4combatspeed: ${monster4combatspeed}`);
@@ -2384,7 +2425,8 @@ function recalculateTeamSpeeds() {
                     
                     const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * conflictMonster.basespeed;
                     const requiredCombatSpeed = monster4combatspeed; // Same combat speed as Monster 4
-                    let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead);
+                    const conflictFlatBonus = conflictMonster.position === 2 ? monster2flatBonus : monster3flatBonus;
+                    let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead) - conflictFlatBonus;
                     
                     // Remove +1 speed adjustment - keep speeds exactly the same
                     // if (speedLeadPosition && conflictMonster.position < speedLeadPosition) {
