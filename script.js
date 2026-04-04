@@ -493,6 +493,12 @@ function updateMonster(id) {
         
         // Insert after the combat speed element
         combatSpeedElement.after(chillingExplanation);
+    } else if (selectedMonster.name === 'Shumar') {
+        const combatSpeedElement = monsterCard.querySelector('.combat-speed');
+        const shumarExplanation = document.createElement('p');
+        shumarExplanation.className = 'chilling-explanation';
+        shumarExplanation.textContent = 'passive included in base speed';
+        combatSpeedElement.after(shumarExplanation);
     }
     
     // Remove any existing team-up explanation from ALL cards (cleanup when any monster changes)
@@ -533,7 +539,9 @@ function updateMonster(id) {
     
     // Update name and speed
     document.getElementById(`${id}-name`).textContent = selectedMonster.name;
-    document.getElementById(`${id}-speed`).textContent = selectedMonster.speed;
+    let displaySpeed = selectedMonster.speed;
+    if (selectedMonster.name === 'Shumar') displaySpeed += 25;
+    document.getElementById(`${id}-speed`).textContent = displaySpeed;
     
     // Set monster image based on awakening status
     if (selectedMonster.image_filename) {
@@ -1861,6 +1869,7 @@ function recalculateTeamSpeeds() {
     const isBooster2A = boosterSelect.options[boosterSelect.selectedIndex].text.includes('(2A)');
     const boosterMonster = getMonsterDetails(boosterSelect.value, isBooster2A);
     let boosterBaseSpeed = boosterMonster ? boosterMonster.speed : 0;
+    if (boosterMonster && boosterMonster.name === 'Shumar') boosterBaseSpeed += 25;
     const boosterRuneSpeed = parseInt(document.getElementById(`${boosterId}-rune-speed`).value) || 0;
     const boosterAtbBoost = parseFloat(document.getElementById(`${boosterId}-atb-boost`).value) || 0;
     let isKroa = false;
@@ -1987,6 +1996,8 @@ function recalculateTeamSpeeds() {
         const isMonster2A = monsterSelect.options[monsterSelect.selectedIndex].text.includes('(2A)');
         const monster = getMonsterDetails(monsterSelect.value, isMonster2A);
         if (!monster) return;
+        let baseSpeed = monster.speed;
+        if (monster.name === 'Shumar') baseSpeed += 25;
         
         // Check if element matches (only if there's a restriction)
         let matchingElementCheck = true;
@@ -2056,7 +2067,7 @@ function recalculateTeamSpeeds() {
                 thisMonsterPosition - 1,
                 accumulatedAtbBoost,
                 artiSpeed,
-                monster.speed,
+                baseSpeed,
                 isSwift,
                 speedBuffActive,
                 isChilling,
@@ -2067,7 +2078,7 @@ function recalculateTeamSpeeds() {
             // Organized COMBAT SPEED logging for Monsters 2, 3, and 4
             if ((maxMonsters >= 3 && (thisMonsterPosition === 2 || thisMonsterPosition === 3)) || 
                 (maxMonsters >= 4 && thisMonsterPosition === 4)) {
-                const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * baseSpeed;
                 const cmbSpeed = Math.ceil(baseSpeedWithLead + tunedSpeed);
                 logCombatSpeedBlock({
                     monsterName: monster.name,
@@ -2089,7 +2100,7 @@ function recalculateTeamSpeeds() {
             }
             // For Kroa, check toggle state for follow-up monsters
             if (isShowCombatSpeed && thisMonsterPosition > 1) {
-                const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * baseSpeed;
                 const totalCombatSpeed = Math.ceil(baseSpeedWithLead + tunedSpeed);
                 card.querySelector('.combat-speed').textContent = `Combat Speed: ${totalCombatSpeed}`;
             } else {
@@ -2114,7 +2125,7 @@ function recalculateTeamSpeeds() {
                 iterationValue,
                 accumulatedAtbBoost,
                 artiSpeed,
-                monster.speed,
+                baseSpeed,
                 isSwift,
                 speedBuffActive,
                 isChilling,
@@ -2125,7 +2136,7 @@ function recalculateTeamSpeeds() {
             // Organized COMBAT SPEED logging for Monsters 2, 3, and 4
             if ((maxMonsters >= 3 && (thisMonsterPosition === 2 || thisMonsterPosition === 3)) || 
                 (maxMonsters >= 4 && thisMonsterPosition === 4)) {
-                const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * baseSpeed;
                 const cmbSpeed = Math.ceil(baseSpeedWithLead + tunedSpeed);
                 logCombatSpeedBlock({
                     monsterName: monster.name,
@@ -2157,7 +2168,7 @@ function recalculateTeamSpeeds() {
                 if (speedLeadPosition && 2 < speedLeadPosition) {
                     monster2tunedspeed += 1;
                 }
-                monster2rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
+                monster2rawspeed = (1.15 + teamSpeedLead/100) * baseSpeed;
                 monster2combatspeed = Math.ceil(monster2tunedspeed + monster2rawspeed);
                 
                 // Check if Monster 2 is faster than the booster and needs adjustment
@@ -2167,7 +2178,7 @@ function recalculateTeamSpeeds() {
                     // console.log(`Booster combat speed: ${boosterCombatSpeed}`);
                     
                     // Adjust Monster 2 to match booster's exact combat speed
-                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * baseSpeed;
                     const requiredCombatSpeed = boosterCombatSpeed; // Same combat speed as booster
                     let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead);
                     
@@ -2178,7 +2189,7 @@ function recalculateTeamSpeeds() {
                     // Update Monster 2's display
                     const monster2Card = monsterCards[1];
                     if (isShowCombatSpeed) {
-                        const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                        const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * baseSpeed;
                         const totalCombatSpeed = Math.ceil(baseSpeedWithLead + finalspeed);
                         monster2Card.querySelector('.combat-speed').textContent = `Combat Speed: ${totalCombatSpeed}`;
                     } else {
@@ -2196,7 +2207,7 @@ function recalculateTeamSpeeds() {
                 boosterTick = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
                 mon2efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))));
                 monster2tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))))) * monster2combatspeed);
-                monster2basespeed = monster.speed;
+                monster2basespeed = baseSpeed;
                 }
             if (thisMonsterPosition === 3) {
                 // Monster 3 calculations
@@ -2209,9 +2220,9 @@ function recalculateTeamSpeeds() {
                     monster3tunedspeed += 1;
                 }
                 
-                monster3rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
+                monster3rawspeed = (1.15 + teamSpeedLead/100) * baseSpeed;
                 monster3combatspeed = Math.ceil(monster3tunedspeed + monster3rawspeed);
-                monster3basespeed = monster.speed;
+                monster3basespeed = baseSpeed;
                 // console.log(``);
                 // console.log(`monster3combatspeed: ${monster3combatspeed}`);
                 // console.log(`monster2combatspeed: ${monster2combatspeed}`);
@@ -2306,11 +2317,11 @@ function recalculateTeamSpeeds() {
                     monster4tunedspeed += 1;
                 }
                 
-                monster4rawspeed = (1.15 + teamSpeedLead/100) * monster.speed;
-                // console.log(`Monster 4 Raw Speed calculation: (1.15 + ${teamSpeedLead}/100) * ${monster.speed} = ${monster4rawspeed}`);
+                monster4rawspeed = (1.15 + teamSpeedLead/100) * baseSpeed;
+                // console.log(`Monster 4 Raw Speed calculation: (1.15 + ${teamSpeedLead}/100) * ${baseSpeed} = ${monster4rawspeed}`);
                 // console.log(`Monster 4 Combat Speed calculation: Math.ceil(${monster4tunedspeed} + ${monster4rawspeed}) = ${Math.ceil(monster4tunedspeed + monster4rawspeed)}`);
                 monster4combatspeed = Math.ceil(monster4tunedspeed + monster4rawspeed);
-                monster4basespeed = monster.speed;
+                monster4basespeed = baseSpeed;
                 // console.log(``);
                 // console.log(`monster4combatspeed: ${monster4combatspeed}`);
                 // console.log(`monster3combatspeed: ${monster3combatspeed}`);
@@ -2412,7 +2423,7 @@ function recalculateTeamSpeeds() {
                 
                 // Organized COMBAT SPEED logging for Monster 4
                 if (maxMonsters >= 4 && thisMonsterPosition === 4) {
-                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * baseSpeed;
                     const cmbSpeed = Math.ceil(baseSpeedWithLead + tunedSpeed);
                     logCombatSpeedBlock({
                         monsterName: monster.name,
@@ -2435,7 +2446,7 @@ function recalculateTeamSpeeds() {
                 
                 // Set display for Monster 4 itself
                 if (isShowCombatSpeed && thisMonsterPosition > 1) {
-                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * baseSpeed;
                     const totalCombatSpeed = Math.ceil(baseSpeedWithLead + tunedSpeed);
                     card.querySelector('.combat-speed').textContent = `Combat Speed: ${totalCombatSpeed}`;
                 } else {
@@ -2467,7 +2478,7 @@ function recalculateTeamSpeeds() {
                 // Display was already updated in the adjustment block, skip the normal update
             } else {
                 if (isShowCombatSpeed && thisMonsterPosition > 1) {
-                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster.speed;
+                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * baseSpeed;
                     const totalCombatSpeed = Math.ceil(baseSpeedWithLead + tunedSpeed);
                     card.querySelector('.combat-speed').textContent = `Combat Speed: ${totalCombatSpeed}`;
                 } else {
