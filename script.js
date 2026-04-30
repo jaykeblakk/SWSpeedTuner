@@ -1828,7 +1828,7 @@ function logMiscChecksBlock(checks) {
 }
 
 /** leadSkillBooster: team speed lead applied to the booster’s ATB (Chilling always gets this if the leader is active). leadSkillFollower: lead on this follower’s base speed (0 if element-restricted lead does not apply to them). */
-function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true, isChilling = false, leadSkillFollower = null) {
+function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true, isChilling = false, leadSkillFollower = null, boosterAppliedSwiftModuloDelta = 0) {
     const leadFollower = leadSkillFollower === null || leadSkillFollower === undefined ? leadSkillBooster : leadSkillFollower;
     // --- Previous logging (kept, but commented out as requested) ---
     // console.log(``);
@@ -1847,7 +1847,8 @@ function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, ti
     // If Miriam is present, add 0.35 to the artifact speed calculation
     const miriamBonus = hasMiriam() ? 0.35 : 0;
     const speedModifier = 1 + SPDBoostConstant * (1 + miriamBonus + artiSpeedSum / 100);
-    let atbPerTick = Math.ceil((1.15 + leadSkillBooster / 100) * baseBooster + runeSpeedBooster);
+    // Apply conditional Swift modulo delta to booster rune contribution for timing math.
+    let atbPerTick = Math.ceil((1.15 + leadSkillBooster / 100) * baseBooster + (runeSpeedBooster - boosterAppliedSwiftModuloDelta));
     if (isChilling) {
         // console.log(`Chilling loop adding 40 to cmb speed.`);
         atbPerTick = atbPerTick + 40;
@@ -1906,6 +1907,8 @@ function recalculateTeamSpeeds() {
     let isKroa = false;
     let isChilling = false;
     const speedLeadPosition = getSpeedLeadPosition();
+    const boosterSwiftCheckbox = document.getElementById(`${boosterId}-swift`);
+    const boosterIsSwift = boosterSwiftCheckbox ? boosterSwiftCheckbox.checked : false;
     
     // Check if booster's element matches (only if there's a restriction)
     let boosterMatchingElementCheck = true;
@@ -1921,8 +1924,23 @@ function recalculateTeamSpeeds() {
     
     // Simple booster speed calculation
     const boosterLeadMultiplier = (1.15 + teamSpeedLead/100);
+
+    // Candidate Swift modulo delta: 1 - frac(base/4) == 1 - ((base%4)/4)
+    // Example: base=113 => base/4=28.25 => delta=1-0.25=0.75
+    const boosterSwiftModuloDelta = boosterIsSwift ? (1 - ((boosterBaseSpeed % 4) / 4)) : 0;
+    // Candidate "follower-style" Swift condition inputs:
+    // Compare fractional part of the unadjusted pre-ceil value against (base%4)/4.
+    const boosterPreCeilNoModulo = (boosterLeadMultiplier * boosterBaseSpeed + boosterRuneSpeed);
+    const boosterPreCeilFrac = ((boosterPreCeilNoModulo % 1) + 1) % 1;
+    const boosterSwiftThreshold = (boosterBaseSpeed % 4) / 4;
+    // Mirror follower-style condition: apply the modulo correction only when the pre-ceil fractional
+    // part is <= the base threshold.
+    const boosterWouldApplyModulo_ByFollowerStyle = boosterIsSwift && (boosterPreCeilFrac <= boosterSwiftThreshold);
+    const boosterAppliedSwiftModuloDelta = boosterWouldApplyModulo_ByFollowerStyle ? boosterSwiftModuloDelta : 0;
+    // Conditional Swift modulo for booster rune contribution: effectiveRune = rune - appliedDelta
+    const boosterEffectiveRuneSpeed = boosterRuneSpeed - boosterAppliedSwiftModuloDelta;
     
-    const boosterPreCeilCombatSpeed = (boosterLeadMultiplier * boosterBaseSpeed + boosterRuneSpeed);
+    const boosterPreCeilCombatSpeed = (boosterLeadMultiplier * boosterBaseSpeed + boosterEffectiveRuneSpeed);
     let boosterCombatSpeed = Math.ceil(boosterPreCeilCombatSpeed);
     
     // Restore original teamSpeedLead after booster calculation
@@ -1933,7 +1951,10 @@ function recalculateTeamSpeeds() {
         boosterCombatSpeed = boosterCombatSpeed + boosterChillingBonus;
         isChilling = true;
     }
-    const boosterShumarBonus = shumarPassiveBaseBonus(boosterMonster, isBooster2A);
+    // Shumar's passive is a flat bonus applied after combat speed calculation.
+    // Do NOT use the generalized flat-bonus helper here, because Chilling's +40 is already handled above.
+    const boosterShumarBonus =
+        boosterMonster && boosterMonster.name === "Shumar" ? (isBooster2A ? 25 : 15) : 0;
     boosterCombatSpeed += boosterShumarBonus;
     if (boosterMonster && boosterMonster.name === "Kroa") {
         isKroa = true;
@@ -2107,7 +2128,8 @@ function recalculateTeamSpeeds() {
                 isSwift,
                 speedBuffActive,
                 isChilling,
-                teamSpeedLead
+                teamSpeedLead,
+                boosterAppliedSwiftModuloDelta
             );
             let tunedSpeed = tunedCalc.tunedSpeed;
             tunedSpeed -= followerFlatBonus;
@@ -2166,7 +2188,8 @@ function recalculateTeamSpeeds() {
                 isSwift,
                 speedBuffActive,
                 isChilling,
-                teamSpeedLead
+                teamSpeedLead,
+                boosterAppliedSwiftModuloDelta
             );
             let tunedSpeed = tunedCalc.tunedSpeed;
             tunedSpeed -= followerFlatBonus;
