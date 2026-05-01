@@ -1935,8 +1935,9 @@ function recalculateTeamSpeeds() {
     const boosterSwiftThreshold = (boosterBaseSpeed % 4) / 4;
     // Mirror follower-style condition: apply the modulo correction only when the pre-ceil fractional
     // part is <= the base threshold.
-    const boosterWouldApplyModulo_ByFollowerStyle = boosterIsSwift && (boosterPreCeilFrac <= boosterSwiftThreshold);
+    const boosterWouldApplyModulo_ByFollowerStyle = boosterIsSwift && (boosterBaseSpeed % 4 !== 0);
     const boosterAppliedSwiftModuloDelta = boosterWouldApplyModulo_ByFollowerStyle ? boosterSwiftModuloDelta : 0;
+
     // Conditional Swift modulo for booster rune contribution: effectiveRune = rune - appliedDelta
     const boosterEffectiveRuneSpeed = boosterRuneSpeed - boosterAppliedSwiftModuloDelta;
     
