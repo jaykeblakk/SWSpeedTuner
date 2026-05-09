@@ -19,6 +19,17 @@ function getTickConstant() {
     }
 }
 
+function getFriendlyTeamRowEl() {
+    return document.querySelector('.team.friendly');
+}
+
+/** Friendly-lineup cards in DOM order (after drag, ids are friendly1…friendly4 left-to-right). */
+function getFriendlyMonsterCardsInDomOrder() {
+    const row = getFriendlyTeamRowEl();
+    if (!row) return [];
+    return Array.from(row.children).filter(el => el.classList && el.classList.contains('monster'));
+}
+
 function handleTuningModeChange(mode) {
     console.log(`Tuning mode changed to: ${mode}`);
     currentTuningMode = mode;
@@ -53,7 +64,7 @@ function handleTuningModeChange(mode) {
     
     // Update Kroa target selections for any existing Kroa monsters
     console.log(`Mode change: updating Kroa targets for maxMonsters = ${maxMonsters}, current kroaBoostTarget = ${kroaBoostTarget}`);
-    const monsterCards = document.querySelectorAll('.monster');
+    const monsterCards = getFriendlyMonsterCardsInDomOrder();
     monsterCards.forEach((card, index) => {
         if (index < maxMonsters) { // Only process visible monsters
             const select = card.querySelector('select');
@@ -70,7 +81,7 @@ function handleTuningModeChange(mode) {
 }
 
 function updateMonsterVisibility() {
-    const monsterCards = document.querySelectorAll('.monster');
+    const monsterCards = getFriendlyMonsterCardsInDomOrder();
     
     monsterCards.forEach((card, index) => {
         if (index < maxMonsters) {
@@ -105,8 +116,7 @@ function getActiveMonsterIds() {
 }
 
 function getActiveMonsterCards() {
-    return Array.from(document.querySelectorAll('.monster'))
-        .slice(0, maxMonsters);
+    return getFriendlyMonsterCardsInDomOrder().slice(0, maxMonsters);
 }
 
 function toggleMonsterCount() {
@@ -1735,7 +1745,7 @@ function getAccumulatedAtbBoost(currentIndex, targetPosition = null) {
 
 function getEffectsByPosition() {
     const effects = [];
-    const monsterCards = Array.from(document.querySelectorAll('.monster'));
+    const monsterCards = getFriendlyMonsterCardsInDomOrder();
     
     monsterCards.forEach((card, index) => {
         const monsterId = card.querySelector('select').id;
@@ -1765,12 +1775,12 @@ function getEffectsByPosition() {
         } else {
             // Normal case for other monsters
             // Only include speed buff if it's not self-only (same logic as ATB boost)
-            hasSpeedBuff = monster.skills.some(skillId => {
+            hasSpeedBuff = skillsData ? monster.skills.some(skillId => {
                 const skill = skillsData.find(s => s.id === skillId);
                 return skill && skill.effects.some(effect => 
                     effect.effect.id === 5 && !effect.self_effect
                 );
-            });
+            }) : false;
         }
         
         const atbBoost = parseFloat(document.getElementById(`${monsterId}-atb-boost`).value) || 0;
@@ -1820,8 +1830,11 @@ function logMiscChecksBlock(checks) {
     console.groupEnd();
 }
 
-/** leadSkillBooster: team speed lead applied to the booster’s ATB (Chilling always gets this if the leader is active). leadSkillFollower: lead on this follower’s base speed (0 if element-restricted lead does not apply to them). */
-function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true, isChilling = false, leadSkillFollower = null, boosterAppliedSwiftModuloDelta = 0) {
+/** leadSkillBooster: team speed lead applied to the booster’s ATB (Chilling always gets this if the leader is active). leadSkillFollower: lead on this follower’s base speed (0 if element-restricted lead does not apply to them).
+ *  bufferSlot: 1-indexed slot of the earliest unit (in turn order) BEFORE this follower whose turn applies the team speed buff.
+ *              Only intervals AFTER that slot are weighted by speedModifier. If null/undefined and applyModifier is true, falls back to legacy behavior (entire iteration buffed, i.e. bufferSlot=1).
+ */
+function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true, isChilling = false, leadSkillFollower = null, boosterAppliedSwiftModuloDelta = 0, bufferSlot = null) {
     const leadFollower = leadSkillFollower === null || leadSkillFollower === undefined ? leadSkillBooster : leadSkillFollower;
     // --- Previous logging (kept, but commented out as requested) ---
 
@@ -1833,8 +1846,18 @@ function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, ti
     if (isChilling) {
         atbPerTick = atbPerTick + 40;
     }
+    // Split iteration into unbuffed prefix (before the buffer's turn) and buffed suffix (after).
+    // Speed buff only applies to intervals AFTER the buffer takes its turn.
+    let unbuffedIterations = iteration;
+    let buffedIterations = 0;
+    if (applyModifier && iteration > 0) {
+        const effectiveBufferSlot = (bufferSlot == null) ? 1 : bufferSlot;
+        const currentSlot = iteration + 1;
+        unbuffedIterations = Math.max(0, Math.min(iteration, effectiveBufferSlot - 1));
+        buffedIterations = Math.max(0, currentSlot - effectiveBufferSlot);
+    }
     const numerator = atbPerTick * tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration) - atbBoostSum/100;
-    const denominator = tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration * (applyModifier ? speedModifier : 1));
+    const denominator = tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + unbuffedIterations + buffedIterations * speedModifier);
 
     const result = numerator / denominator;
     let speedResult = Math.floor(result) - baseSpeed * (1.15 + leadFollower / 100);
@@ -1862,7 +1885,7 @@ function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, ti
 function recalculateTeamSpeeds() {
     checkForMiriam();
     const miriamBonus = hasMiriam() ? 0.35 : 0;
-    const monsterCards = Array.from(document.querySelectorAll('.monster'));
+    const monsterCards = getFriendlyMonsterCardsInDomOrder();
     const speedLeadResolved = getSpeedLeadInfo();
     let teamSpeedLead = speedLeadResolved.amount;
     let speedLeadElement = speedLeadResolved.element;
@@ -1870,12 +1893,12 @@ function recalculateTeamSpeeds() {
     // Bool: does the speed lead have an element restriction?
     const hasElementRestriction = speedLeadElement != null;
     
-    // Get booster's stats
-    const boosterCard = monsterCards[0];
-    const boosterId = boosterCard.querySelector('select').id;
+    // Booster is always the monster in slot friendly1 (leftmost tuning slot after drag remaps ids).
+    const boosterId = 'friendly1';
     const boosterSelect = document.getElementById(boosterId);
-    const isBooster2A = boosterSelect.options[boosterSelect.selectedIndex].text.includes('(2A)');
-    const boosterMonster = getMonsterDetails(boosterSelect.value, isBooster2A);
+    const boosterCard = boosterSelect ? boosterSelect.closest('.monster') : monsterCards[0];
+    const isBooster2A = boosterSelect && boosterSelect.options[boosterSelect.selectedIndex].text.includes('(2A)');
+    const boosterMonster = boosterSelect && boosterSelect.value ? getMonsterDetails(boosterSelect.value, isBooster2A) : null;
     let boosterBaseSpeed = (boosterMonster ? boosterMonster.speed : 0);
     const boosterRuneSpeed = parseInt(document.getElementById(`${boosterId}-rune-speed`).value) || 0;
     const boosterAtbBoost = parseFloat(document.getElementById(`${boosterId}-atb-boost`).value) || 0;
@@ -2051,19 +2074,22 @@ function recalculateTeamSpeeds() {
         const combatSpeedToggle = document.getElementById('cmb-speed-toggle');
         const isShowCombatSpeed = combatSpeedToggle ? combatSpeedToggle.checked : false;
         
-        // Determine if speed buff is active for this monster
+        // Determine if speed buff is active for this monster, and which slot first applies it.
+        // The team speed buff only takes effect AFTER the buffer's own turn ends, so any
+        // intervals before that slot are unbuffed and intervals after are buffed.
         let speedBuffActive = false;
+        let bufferSlot = null;
         
-        // If Monster 1 has speed buff, it applies to all
         if (applyModifier) {
+            // Booster (slot 1) carries the team speed buff → all follower intervals are buffed.
             speedBuffActive = true;
+            bufferSlot = 1;
         } else {
-            // Check if any monster before this one has a speed buff
-            // For Monster 2 (position 2), only Monster 1's buff would apply
-            // For Monster 3 (position 3), both Monster 1 and 2's buffs could apply
+            // Earliest follower BEFORE this monster (in turn order) that brings the buff.
             for (let i = 0; i < currentPosition - 1; i++) {
                 if (effectsByPosition[i] && effectsByPosition[i].hasSpeedBuff) {
                     speedBuffActive = true;
+                    bufferSlot = i + 1; // effectsByPosition is 0-indexed, slot is 1-indexed
                     break;
                 }
             }
@@ -2100,7 +2126,8 @@ function recalculateTeamSpeeds() {
                 speedBuffActive,
                 isChilling,
                 teamSpeedLead,
-                boosterAppliedSwiftModuloDelta
+                boosterAppliedSwiftModuloDelta,
+                bufferSlot
             );
             let tunedSpeed = tunedCalc.tunedSpeed;
             tunedSpeed -= followerFlatBonus;
@@ -2160,7 +2187,8 @@ function recalculateTeamSpeeds() {
                 speedBuffActive,
                 isChilling,
                 teamSpeedLead,
-                boosterAppliedSwiftModuloDelta
+                boosterAppliedSwiftModuloDelta,
+                bufferSlot
             );
             let tunedSpeed = tunedCalc.tunedSpeed;
             tunedSpeed -= followerFlatBonus;
@@ -2172,7 +2200,15 @@ function recalculateTeamSpeeds() {
                 const cmbSpeed = Math.ceil(baseSpeedWithLead + tunedSpeed);
                 const boosterTickForLog = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
                 const speedModifierForLog = 1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100));
-                const effTickForLog = boosterTickForLog + (iterationValue * (speedBuffActive ? speedModifierForLog : 1));
+                let unbuffedItersForLog = iterationValue;
+                let buffedItersForLog = 0;
+                if (speedBuffActive && iterationValue > 0) {
+                    const effBufferSlotForLog = (bufferSlot == null) ? 1 : bufferSlot;
+                    const currentSlotForLog = iterationValue + 1;
+                    unbuffedItersForLog = Math.max(0, Math.min(iterationValue, effBufferSlotForLog - 1));
+                    buffedItersForLog = Math.max(0, currentSlotForLog - effBufferSlotForLog);
+                }
+                const effTickForLog = boosterTickForLog + unbuffedItersForLog + buffedItersForLog * speedModifierForLog;
                 logCombatSpeedBlock({
                     monsterName: monster.name,
                     cmbSpeed,
@@ -2491,7 +2527,10 @@ function recalculateTeamSpeeds() {
 
 
 function getBoosterEffectTypes(boosterId) {
-    const boosterMonster = getMonsterDetails(document.getElementById(boosterId).value);
+    const boosterSelect = document.getElementById(boosterId);
+    if (!boosterSelect || !boosterSelect.value || !skillsData) return [];
+    const isBooster2A = boosterSelect.options[boosterSelect.selectedIndex].text.includes('(2A)');
+    const boosterMonster = getMonsterDetails(boosterSelect.value, isBooster2A);
     if (!boosterMonster || !boosterMonster.skills) return [];
     
     const effectIds = [];
