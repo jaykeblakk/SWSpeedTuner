@@ -2272,7 +2272,12 @@ function recalculateTeamSpeeds() {
                 }
                 
                 boosterTick = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
-                mon2efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))));
+                // Use the ACTUAL trigger tick of this monster's bar (when it would fire at its current
+                // combat speed) so the monster 2 vs monster 3 tie-break compares real-world ordering,
+                // not the formula's targeted slot ordering.
+                mon2efftick = (monster2combatspeed && monster2combatspeed > 0)
+                    ? Math.ceil(1 / (monster2combatspeed * getTickConstant()))
+                    : null;
                 monster2tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))))) * monster2combatspeed);
                 monster2basespeed = baseSpeed;
                 }
@@ -2291,13 +2296,19 @@ function recalculateTeamSpeeds() {
                 monster3basespeed = baseSpeed;
                 boosterTick = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
                 monster3tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))))) * monster3combatspeed);
-                mon3efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))));
+                // Use the ACTUAL trigger tick of this monster's bar (when it would fire at its current
+                // combat speed) so the monster 2 vs monster 3 tie-break compares real-world ordering,
+                // not the formula's targeted slot ordering.
+                mon3efftick = (monster3combatspeed && monster3combatspeed > 0)
+                    ? Math.ceil(1 / (monster3combatspeed * getTickConstant()))
+                    : null;
                 
                 // In 3-monster mode, check for Monster 3 vs Monster 2 conflicts (since Monster 4 logic won't run)
                 if (maxMonsters === 3) {
-                    // Check if Monster 2 would move after Monster 3 and needs adjustment.
-                    // Use an "effective time" comparison (efftick / combatSpeed) so SPD UP modifiers can allow
-                    // a lower combat speed while still moving first.
+                    // Check if Monster 2 would actually move after Monster 3 and needs adjustment.
+                    // mon2/mon3 efftick are the ACTUAL trigger ticks based on each monster's current
+                    // combat speed (ceil(1 / (combatSpeed * tickConstant))). Dividing by combatSpeed
+                    // also breaks ties within the same trigger tick in favor of higher fill-rate.
                     const monster2Time = (mon2efftick != null && monster2combatspeed)
                         ? (mon2efftick / monster2combatspeed)
                         : null;
