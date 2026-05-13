@@ -1806,9 +1806,9 @@ function logMiscChecksBlock(checks) {
 }
 
 /** leadSkillBooster: team speed lead applied to the booster’s ATB (Chilling always gets this if the leader is active). leadSkillFollower: lead on this follower’s base speed (0 if element-restricted lead does not apply to them). */
-function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, applyModifier = true, isChilling = false, leadSkillFollower = null, shumarBonus = 0) {
+function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, speedBuffStartIteration = null, isChilling = false, leadSkillFollower = null, shumarBonus = 0) {
     const leadFollower = leadSkillFollower === null || leadSkillFollower === undefined ? leadSkillBooster : leadSkillFollower;
-    // --- Previous logging (kept, but commented out as requested) ---
+    // --- Previous logging ---
     // console.log(``);
     // console.log(`leadSkillBooster: ${leadSkillBooster}`);
     // console.log(`leadFollower: ${leadFollower}`);
@@ -1820,7 +1820,7 @@ function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, ti
     // console.log(`artiSpeedSum: ${artiSpeedSum}`);
     // console.log(`baseSpeed: ${baseSpeed}`);
     // console.log(`isSwift: ${isSwift}`);
-    // console.log(`applyModifier: ${applyModifier}`);
+    // console.log(`speedBuffStartIteration: ${speedBuffStartIteration}`);
 
     // If Miriam is present, add 0.35 to the artifact speed calculation
     const miriamBonus = hasMiriam() ? 0.35 : 0;
@@ -1836,7 +1836,16 @@ function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, ti
     // console.log(`Booster Combat Speed: ${atbPerTick}`);
     const numerator = atbPerTick * tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration) - atbBoostSum/100;
     // console.log(`Numerator: ${numerator}`);
-    const denominator = tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration * (applyModifier ? speedModifier : 1));
+    let denominator;
+    if (speedBuffStartIteration === null || speedBuffStartIteration > iteration) {
+        // No speed buff applies to this monster
+        denominator = tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + iteration);
+    } else {
+        // Speed buff kicks in at speedBuffStartIteration
+        const normalTicks = speedBuffStartIteration - 1;
+        const buffedTicks = iteration - normalTicks;
+        denominator = tickConstant * (Math.ceil(1/(atbPerTick * tickConstant)) + normalTicks + buffedTicks * speedModifier);
+    }
     // console.log(`Denominator: ${denominator}`);
 
     const result = numerator / denominator;
@@ -2031,19 +2040,18 @@ function recalculateTeamSpeeds() {
         const combatSpeedToggle = document.getElementById('cmb-speed-toggle');
         const isShowCombatSpeed = combatSpeedToggle ? combatSpeedToggle.checked : false;
         
-        // Determine if speed buff is active for this monster
-        let speedBuffActive = false;
-        
-        // If Monster 1 has speed buff, it applies to all
+        let speedBuffStartIteration = null;
+
         if (applyModifier) {
-            speedBuffActive = true;
+            // Booster has speed buff — applies from iteration 1
+            speedBuffStartIteration = 1;
         } else {
-            // Check if any monster before this one has a speed buff
-            // For Monster 2 (position 2), only Monster 1's buff would apply
-            // For Monster 3 (position 3), both Monster 1 and 2's buffs could apply
+            // Find the first monster before this one that has a speed buff
             for (let i = 0; i < currentPosition - 1; i++) {
                 if (effectsByPosition[i] && effectsByPosition[i].hasSpeedBuff) {
-                    speedBuffActive = true;
+                    // i is DOM index (0-based), iteration is 1-based position after booster
+                    // So the buff starts at the iteration AFTER the monster that applies it
+                    speedBuffStartIteration = i + 1;
                     break;
                 }
             }
@@ -2084,7 +2092,7 @@ function recalculateTeamSpeeds() {
                 artiSpeed,
                 monster.speed,
                 isSwift,
-                speedBuffActive,
+                speedBuffStartIteration,
                 isChilling,
                 teamSpeedLead,
                 followerShumarBonus
@@ -2104,7 +2112,7 @@ function recalculateTeamSpeeds() {
                     isSwift,
                     miscChecks: {
                         'Iteration': thisMonsterPosition - 1,
-                        'Speed Buff Active': speedBuffActive,
+                        'Speed Buff Start Iteration': speedBuffStartIteration,
                         'Accumulated ATB Boost': accumulatedAtbBoost,
                         'Artifact SPD UP (%)': artiSpeed,
                         'Team Speed Lead (%)': matchingElementCheck ? savedTeamSpeedLead : 0,
@@ -2145,7 +2153,7 @@ function recalculateTeamSpeeds() {
                 artiSpeed,
                 monster.speed,
                 isSwift,
-                speedBuffActive,
+                speedBuffStartIteration,
                 isChilling,
                 teamSpeedLead,
                 followerShumarBonus
@@ -2165,7 +2173,7 @@ function recalculateTeamSpeeds() {
                     isSwift,
                     miscChecks: {
                         'Iteration': iterationValue,
-                        'Speed Buff Active': speedBuffActive,
+                        'Speed Buff Start Iteration': speedBuffStartIteration,
                         'Accumulated ATB Boost': accumulatedAtbBoost,
                         'Artifact SPD UP (%)': artiSpeed,
                         'Team Speed Lead (%)': matchingElementCheck ? savedTeamSpeedLead : 0,
@@ -2225,7 +2233,7 @@ function recalculateTeamSpeeds() {
                 
                 boosterTick = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
                 mon2efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))));
-                monster2tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))))) * monster2combatspeed);
+                monster2tfnumber = tunedCalc.numerator / tunedCalc.denominator;
                 monster2basespeed = monster.speed;
                 }
             if (thisMonsterPosition === 3) {
@@ -2247,14 +2255,14 @@ function recalculateTeamSpeeds() {
                 // console.log(`monster2combatspeed: ${monster2combatspeed}`);
                 // console.log(`mon2efftick: ${mon2efftick}`);
                 boosterTick = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
-                monster3tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))))) * monster3combatspeed);
+                monster3tfnumber = tunedCalc.numerator / tunedCalc.denominator;
                 // console.log(`monster3tfnumber: ${monster3tfnumber}`);
                 // console.log(`monster2tfnumber: ${monster2tfnumber}`);
                 mon3efftick = boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))));
                 
                 // In 3-monster mode, check for Monster 3 vs Monster 2 conflicts (since Monster 4 logic won't run)
                 // Check if Monster 2 is slower than Monster 3 and needs adjustment
-                if (monster2tfnumber != null && monster2tfnumber > monster3tfnumber && !adjustedMonsters.has(2)) {
+                if (monster2tfnumber != null && monster2tfnumber < monster3tfnumber && !adjustedMonsters.has(2)) {
                     // console.log(`Adjusting Monster 2 due to Monster 3 conflict in 3-monster mode`);
                     // console.log(`Original Monster 2 combat speed: ${monster2combatspeed}`);
                     // console.log(`Monster 3 combat speed: ${monster3combatspeed}`);
@@ -2277,8 +2285,7 @@ function recalculateTeamSpeeds() {
                     }
                     
                     const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster2basespeed;
-                    const requiredCombatSpeed = monster3tfnumber / mon2efftick;
-                    let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead);
+                    let finalspeed = monster3combatspeed - Math.ceil(baseSpeedWithLead);
                     
                     // Remove +1 speed adjustment - keep speeds exactly the same
                     // if (speedLeadPosition && 2 < speedLeadPosition) {
@@ -2302,7 +2309,7 @@ function recalculateTeamSpeeds() {
                     
                     // Mark Monster 2 as adjusted and update combat speed
                     adjustedMonsters.add(2);
-                    monster2combatspeed = requiredCombatSpeed; // Now same speed as Monster 3
+                    monster2combatspeed = monster3combatspeed; // Now same speed as Monster 3
                     
                     // console.log(`Monster 2 adjusted to match Monster 3's combat speed: ${finalspeed}`);
                 }
@@ -2344,7 +2351,7 @@ function recalculateTeamSpeeds() {
                 // console.log(`monster3combatspeed: ${monster3combatspeed}`);
                 // console.log(`monster2combatspeed: ${monster2combatspeed}`);
                 boosterTick = Math.ceil(1 / (boosterCombatSpeed * getTickConstant()));
-                monster4tfnumber = ((boosterTick + ((index) * (1 + SPDBoostConstant * (1 + miriamBonus + (artiSpeed / 100))))) * monster4combatspeed);
+                monster4tfnumber = tunedCalc.numerator / tunedCalc.denominator;
                 // console.log(`monster4tfnumber: ${monster4tfnumber}`);
                 // console.log(`monster3tfnumber: ${monster3tfnumber}`);
                 // console.log(`monster2tfnumber: ${monster2tfnumber}`);
@@ -2353,7 +2360,7 @@ function recalculateTeamSpeeds() {
                 const conflictingMonsters = [];
                 
                 // Only adjust Monster 2 if it exists, is slower than Monster 4 (and hasn't been adjusted)
-                if (monster2combatspeed != null && monster2tfnumber > monster4tfnumber && !adjustedMonsters.has(2)) {
+                if (monster2combatspeed != null && monster2tfnumber < monster4tfnumber && !adjustedMonsters.has(2)) {
                     conflictingMonsters.push({
                         position: 2,
                         card: monsterCards[1],
@@ -2365,7 +2372,7 @@ function recalculateTeamSpeeds() {
                 }
                 
                 // Only adjust Monster 3 if it exists, is slower than Monster 4 (and hasn't been adjusted)
-                if (monster3combatspeed != null && monster3tfnumber > monster4tfnumber && !adjustedMonsters.has(3)) {
+                if (monster3combatspeed != null && monster3tfnumber < monster4tfnumber && !adjustedMonsters.has(3)) {
                     conflictingMonsters.push({
                         position: 3,
                         card: monsterCards[2],
@@ -2400,8 +2407,7 @@ function recalculateTeamSpeeds() {
                     }
                     
                     const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * conflictMonster.basespeed;
-                    const requiredCombatSpeed = monster4tfnumber / conflictMonster.efftick;
-                    let finalspeed = requiredCombatSpeed - Math.ceil(baseSpeedWithLead);
+                    let finalspeed = monster4combatspeed - Math.ceil(baseSpeedWithLead);
                     
                     // Remove +1 speed adjustment - keep speeds exactly the same
                     // if (speedLeadPosition && conflictMonster.position < speedLeadPosition) {
@@ -2450,7 +2456,7 @@ function recalculateTeamSpeeds() {
                         isSwift,
                         miscChecks: {
                             'Iteration': iterationValue,
-                            'Speed Buff Active': speedBuffActive,
+                            'Speed Buff Start Iteration': speedBuffStartIteration,
                             'Accumulated ATB Boost': accumulatedAtbBoost,
                             'Artifact SPD UP (%)': artiSpeed,
                             'Team Speed Lead (%)': matchingElementCheck ? savedTeamSpeedLead : 0,
