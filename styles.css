@@ -516,7 +516,8 @@ input[type="checkbox"] {
     line-height: 1.5;
 }
 
-.chilling-explanation {
+.chilling-explanation,
+.shumar-explanation {
     font-size: 12px;
     color: #4CAF50;
     font-style: italic;
