@@ -1852,9 +1852,10 @@ function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, ti
     let speedResult = Math.floor(result) - baseSpeed * (1.15 + leadFollower / 100);
 
     let swiftAdjustment = false;
-    if (isSwift) {
+    const baseMod4 = baseSpeed % 4;
+    if (isSwift && baseMod4 !== 0) {
         let swiftnum = speedResult % 1;
-        let nonswiftnum = (baseSpeed % 4) / 4;
+        let nonswiftnum = baseMod4 / 4;
         // console.log(`SwiftNum: ${swiftnum}`);
         // console.log(`nonswiftNum: ${nonswiftnum}`);
         if (swiftnum > nonswiftnum) {
@@ -1914,7 +1915,8 @@ function recalculateTeamSpeeds() {
     
     const boosterSwiftCheckbox = document.getElementById(`${boosterId}-swift`);
     const boosterIsSwift = boosterSwiftCheckbox ? boosterSwiftCheckbox.checked : false;
-    const swiftRuneAdjustment = boosterIsSwift ? (1 - (boosterBaseSpeed % 4) / 4) : 0;
+    const boosterBaseMod4 = boosterBaseSpeed % 4;
+    const swiftRuneAdjustment = boosterIsSwift && boosterBaseMod4 !== 0 ? (1 - boosterBaseMod4 / 4) : 0;
     const boosterPreCeilCombatSpeed = (boosterLeadMultiplier * boosterBaseSpeed + boosterRuneSpeed - swiftRuneAdjustment);
     let boosterCombatSpeed = Math.ceil(boosterPreCeilCombatSpeed);
 
