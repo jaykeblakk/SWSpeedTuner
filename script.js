@@ -2315,13 +2315,9 @@ function recalculateTeamSpeeds() {
                         monster2MatchingElementCheck = speedLeadElement === monster2Details.element;
                     }
                     
-                    // If element doesn't match, set teamSpeedLead to 0 for Monster 2 calculation
-                    const savedTeamSpeedLeadForM2 = teamSpeedLead;
-                    if (!monster2MatchingElementCheck) {
-                        teamSpeedLead = 0;
-                    }
-                    
-                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster2basespeed;
+                    // Use team lead saved before this slot zeroed teamSpeedLead (e.g. Icares has no Wind lead)
+                    const leadForM2Adjust = monster2MatchingElementCheck ? savedTeamSpeedLead : 0;
+                    const baseSpeedWithLead = (1.15 + leadForM2Adjust / 100) * monster2basespeed;
                     let finalspeed = monster3combatspeed - Math.ceil(baseSpeedWithLead);
                     
                     // Remove +1 speed adjustment - keep speeds exactly the same
@@ -2332,21 +2328,19 @@ function recalculateTeamSpeeds() {
                         finalspeed = 0; 
                     }
                     
+                    const adjustedCombatSpeed = Math.ceil(baseSpeedWithLead + finalspeed);
+                    
                     // Update Monster 2's display
                     if (isShowCombatSpeed) {
-                        const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * monster2basespeed;
-                        const totalCombatSpeed = Math.ceil(baseSpeedWithLead + finalspeed);
-                        monster2Card.querySelector('.combat-speed').textContent = `Combat Speed: ${totalCombatSpeed}`;
+                        monster2Card.querySelector('.combat-speed').textContent = `Combat Speed: ${adjustedCombatSpeed}`;
                     } else {
                         monster2Card.querySelector('.combat-speed').textContent = `Speed Needed: ${finalspeed}`;
                     }
                     
-                    // Restore teamSpeedLead after Monster 2 calculation
-                    teamSpeedLead = savedTeamSpeedLeadForM2;
-                    
                     // Mark Monster 2 as adjusted and update combat speed
                     adjustedMonsters.add(2);
-                    monster2combatspeed = monster3combatspeed; // Now same speed as Monster 3
+                    monster2combatspeed = adjustedCombatSpeed;
+                    monster2tunedspeed = finalspeed;
                     
                     // console.log(`Monster 2 adjusted to match Monster 3's combat speed: ${finalspeed}`);
                 }
@@ -2437,13 +2431,8 @@ function recalculateTeamSpeeds() {
                         conflictMonsterMatchingElementCheck = speedLeadElement === conflictMonsterDetails.element;
                     }
                     
-                    // If element doesn't match, set teamSpeedLead to 0 for conflict monster calculation
-                    const savedTeamSpeedLeadForConflict = teamSpeedLead;
-                    if (!conflictMonsterMatchingElementCheck) {
-                        teamSpeedLead = 0;
-                    }
-                    
-                    const baseSpeedWithLead = (1.15 + teamSpeedLead/100) * conflictMonster.basespeed;
+                    const leadForConflictAdjust = conflictMonsterMatchingElementCheck ? savedTeamSpeedLead : 0;
+                    const baseSpeedWithLead = (1.15 + leadForConflictAdjust / 100) * conflictMonster.basespeed;
                     let finalspeed = monster4combatspeed - Math.ceil(baseSpeedWithLead);
                     
                     // Remove +1 speed adjustment - keep speeds exactly the same
@@ -2476,9 +2465,6 @@ function recalculateTeamSpeeds() {
                     }
                     
                     // console.log(`Monster ${conflictMonster.position} adjusted to match Monster 4's combat speed: ${finalspeed}`);
-                    
-                    // Restore teamSpeedLead after conflict monster calculation
-                    teamSpeedLead = savedTeamSpeedLeadForConflict;
                 });
 
                 // Cascade: after slot-4 bumps, re-check earlier slots (combat speed, not tfnumber)
@@ -2488,7 +2474,7 @@ function recalculateTeamSpeeds() {
                         targetCombatSpeed: monster4combatspeed,
                         baseSpeed: monster3basespeed,
                         card: monsterCards[2],
-                        teamSpeedLead,
+                        teamSpeedLead: savedTeamSpeedLead,
                         hasElementRestriction,
                         speedLeadElement,
                         isShowCombatSpeed
@@ -2501,7 +2487,7 @@ function recalculateTeamSpeeds() {
                         targetCombatSpeed: monster3combatspeed,
                         baseSpeed: monster2basespeed,
                         card: monsterCards[1],
-                        teamSpeedLead,
+                        teamSpeedLead: savedTeamSpeedLead,
                         hasElementRestriction,
                         speedLeadElement,
                         isShowCombatSpeed
