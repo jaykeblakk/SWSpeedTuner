@@ -1805,6 +1805,41 @@ function logMiscChecksBlock(checks) {
     console.groupEnd();
 }
 
+/** Bump a follower's rune speed so their combat speed matches targetCombatSpeed. */
+function adjustFollowerToTargetCombatSpeed({
+    position,
+    targetCombatSpeed,
+    baseSpeed,
+    card,
+    teamSpeedLead,
+    hasElementRestriction,
+    speedLeadElement,
+    isShowCombatSpeed
+}) {
+    const select = card.querySelector('select');
+    const is2A = select.options[select.selectedIndex].text.includes('(2A)');
+    const details = getMonsterDetails(select.value, is2A);
+    let matchingElementCheck = true;
+    if (hasElementRestriction && details) {
+        matchingElementCheck = speedLeadElement === details.element;
+    }
+    const leadForCalc = matchingElementCheck ? teamSpeedLead : 0;
+    const baseSpeedWithLead = (1.15 + leadForCalc / 100) * baseSpeed;
+    let finalspeed = targetCombatSpeed - Math.ceil(baseSpeedWithLead);
+    if (finalspeed <= 0) {
+        finalspeed = 0;
+    }
+    const adjustedCombatSpeed = Math.ceil(baseSpeedWithLead + finalspeed);
+    if (isShowCombatSpeed && position > 1) {
+        card.querySelector('.combat-speed').textContent = `Combat Speed: ${adjustedCombatSpeed}`;
+    } else if (position === 1) {
+        card.querySelector('.combat-speed').textContent = `Combat Speed: ${finalspeed}`;
+    } else {
+        card.querySelector('.combat-speed').textContent = `Speed Needed: ${finalspeed}`;
+    }
+    return { finalspeed, adjustedCombatSpeed };
+}
+
 /** leadSkillBooster: team speed lead applied to the booster’s ATB (Chilling always gets this if the leader is active). leadSkillFollower: lead on this follower’s base speed (0 if element-restricted lead does not apply to them). */
 function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, tickConstant, iteration, atbBoostSum, artiSpeedSum, baseSpeed, isSwift = true, speedBuffStartIteration = null, isChilling = false, leadSkillFollower = null, shumarBonus = 0) {
     const leadFollower = leadSkillFollower === null || leadSkillFollower === undefined ? leadSkillBooster : leadSkillFollower;
@@ -2445,6 +2480,36 @@ function recalculateTeamSpeeds() {
                     // Restore teamSpeedLead after conflict monster calculation
                     teamSpeedLead = savedTeamSpeedLeadForConflict;
                 });
+
+                // Cascade: after slot-4 bumps, re-check earlier slots (combat speed, not tfnumber)
+                if (monster3combatspeed != null && monster4combatspeed != null && monster3combatspeed < monster4combatspeed) {
+                    const m3Result = adjustFollowerToTargetCombatSpeed({
+                        position: 3,
+                        targetCombatSpeed: monster4combatspeed,
+                        baseSpeed: monster3basespeed,
+                        card: monsterCards[2],
+                        teamSpeedLead,
+                        hasElementRestriction,
+                        speedLeadElement,
+                        isShowCombatSpeed
+                    });
+                    monster3combatspeed = m3Result.adjustedCombatSpeed;
+                }
+                if (monster2combatspeed != null && monster3combatspeed != null && monster2combatspeed < monster3combatspeed) {
+                    const m2Result = adjustFollowerToTargetCombatSpeed({
+                        position: 2,
+                        targetCombatSpeed: monster3combatspeed,
+                        baseSpeed: monster2basespeed,
+                        card: monsterCards[1],
+                        teamSpeedLead,
+                        hasElementRestriction,
+                        speedLeadElement,
+                        isShowCombatSpeed
+                    });
+                    monster2combatspeed = m2Result.adjustedCombatSpeed;
+                    monster2tunedspeed = m2Result.finalspeed;
+                    adjustedMonsters.add(2);
+                }
                 
                 // Organized COMBAT SPEED logging for Monster 4
                 if (maxMonsters >= 4 && thisMonsterPosition === 4) {
