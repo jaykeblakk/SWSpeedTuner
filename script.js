@@ -472,6 +472,7 @@ function updateMonster(id) {
         // Add event listeners to the radio buttons
         kahliSkillDiv.querySelectorAll('input[type="radio"]').forEach(radio => {
             radio.addEventListener('change', () => {
+                updateArtifactSpeedVisibility();
                 recalculateTeamSpeeds();
                 updateSpeedDisplayText();
             });
@@ -595,23 +596,19 @@ function updateMonster(id) {
     const isCraig = selectedMonster.name === "Craig";
     const isMBisonLight = selectedMonster.name === "M. Bison" && selectedMonster.element === "Light";
     const isVerdehile = selectedMonster.name === "Verdehile";
-    const isJeogun = selectedMonster.name === "Jeogun";
     const isMihyang = selectedMonster.name === "Mihyang";
     const hasAtbBoost = checkForAtbBoost(selectedMonster.skills, isYeonhong);
     const atbBoostContainer = document.getElementById(`${id}-atb-boost-container`);
     const atbBoostInput = document.getElementById(`${id}-atb-boost`);
 
     // Hard-coded exclusion: Mihyang should never show ATB boost
-    if ((hasAtbBoost || isCraig || isMBisonLight || isVerdehile || isJeogun) && !isMihyang) {
+    if ((hasAtbBoost || isCraig || isMBisonLight || isVerdehile) && !isMihyang) {
         // Get the ATB boost value and set it in the input
         let atbBoostValue = 0;
 
         if (isCraig || isMBisonLight || isVerdehile) {
             // Set Craig's, M. Bison (Light)'s, and Verdehile's default ATB boost to 40
             atbBoostValue = 40;
-        } else if (isJeogun) {
-            // Set Jeogun's default ATB boost to 15
-            atbBoostValue = 15;
         } else {
             atbBoostValue = getAtbBoostValue(selectedMonster.skills, isYeonhong, selectedMonster.name);
         }
@@ -696,33 +693,7 @@ function updateMonster(id) {
         }
     }
     
-    // Handle speed buff for artifacts
-    if (id === 'friendly1') {
-        const hasSpeedBuff = selectedMonster.skills.some(skillId => {
-            const skill = skillsData.find(s => s.id === skillId);
-            // Only include speed buff if it's not self-only (same logic as ATB boost)
-            return skill && skill.effects.some(effect => 
-                effect.effect.id === 5 && !effect.self_effect
-            );
-        });
-        
-        // Get all artifact speed inputs and containers
-        const artifactInputs = document.querySelectorAll('.artifact-speed input');
-        const artifactContainers = document.querySelectorAll('.artifact-speed');
-
-        if (hasSpeedBuff) {
-            artifactContainers.forEach(container => {
-                container.style.display = 'block';
-            });
-        } else {
-            artifactContainers.forEach(container => {
-                container.style.display = 'none';
-            });
-            artifactInputs.forEach(input => {
-                input.value = 0;
-            });
-        }
-    }
+    updateArtifactSpeedVisibility();
     
     // Recalculate and update display
     recalculateTeamSpeeds();
@@ -730,6 +701,10 @@ function updateMonster(id) {
 }
 
 
+
+function effectAppliesToTeam(effect) {
+    return !effect.self_effect || effect.aoe;
+}
 
 function logAtbBoostBlock({ monsterName, skillName, effectName, quantity, selfEffect, isYeonhong }) {
     console.groupCollapsed('ATB BOOST');
@@ -769,8 +744,8 @@ function getAtbBoostValue(skillIds, isYeonhong = false, debugMonsterName = null)
                 return effect.quantity;
             }
             
-            // For other monsters, only include if it's not self-only
-            if (isAtbBoost && !effect.self_effect && effect.quantity) {
+            // Skip only true self-only effects (self_effect without aoe)
+            if (isAtbBoost && effectAppliesToTeam(effect) && effect.quantity) {
                 logAtbBoostBlock({
                     monsterName: debugMonsterName,
                     skillName: skill.name,
@@ -803,8 +778,8 @@ function checkForAtbBoost(skillIds, isYeonhong = false) {
             // For Yeonhong, include the ATB boost even if it's self-only
             if (isYeonhong && isAtbBoost) return true;
             
-            // For other monsters, only include if it's not self-only
-            return isAtbBoost && !effect.self_effect;
+            // Skip only true self-only effects (self_effect without aoe)
+            return isAtbBoost && effectAppliesToTeam(effect);
         });
     });
 }
@@ -1749,11 +1724,10 @@ function getEffectsByPosition() {
             hasSpeedBuff = selectedSkill === '3';
         } else {
             // Normal case for other monsters
-            // Only include speed buff if it's not self-only (same logic as ATB boost)
             hasSpeedBuff = monster.skills.some(skillId => {
                 const skill = skillsData.find(s => s.id === skillId);
                 return skill && skill.effects.some(effect => 
-                    effect.effect.id === 5 && !effect.self_effect
+                    effect.effect.id === 5 && effectAppliesToTeam(effect)
                 );
             });
         }
@@ -1770,6 +1744,37 @@ function getEffectsByPosition() {
     return effects;
 }
 
+function shouldShowArtifactSpeed(position) {
+    const effectsByPosition = getEffectsByPosition();
+    if (position === 1) {
+        return !!(effectsByPosition[0] && effectsByPosition[0].hasSpeedBuff);
+    }
+    for (let i = 0; i < position - 1; i++) {
+        if (effectsByPosition[i] && effectsByPosition[i].hasSpeedBuff) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function updateArtifactSpeedVisibility() {
+    getActiveMonsterCards().forEach((card, index) => {
+        const select = card.querySelector('select');
+        if (!select) return;
+
+        const monsterId = select.id;
+        const position = index + 1;
+        const container = card.querySelector('.artifact-speed');
+        const input = document.getElementById(`${monsterId}-artifact-speed`);
+        if (!container) return;
+
+        const show = shouldShowArtifactSpeed(position);
+        container.style.display = show ? 'block' : 'none';
+        if (!show && input) {
+            input.value = 0;
+        }
+    });
+}
 
 function logCombatSpeedBlock({ monsterName, cmbSpeed, numerator, denominator, isSwift, breakdown = null, miscChecks = null }) {
     // A clean, consistent block for combat speed debugging
@@ -1911,6 +1916,7 @@ function calculateTunedSpeed(leadSkillBooster, baseBooster, runeSpeedBooster, ti
 
 function recalculateTeamSpeeds() {
     checkForMiriam();
+    updateArtifactSpeedVisibility();
     const miriamBonus = hasMiriam() ? 0.35 : 0;
     const monsterCards = Array.from(document.querySelectorAll('.monster'));
     const speedLeadResolved = getSpeedLeadInfo();
@@ -2585,15 +2591,11 @@ function getBoosterEffectTypes(boosterId) {
         const skill = skillsData.find(s => s.id === skillId);
         if (skill && skill.effects) {
             skill.effects.forEach(effect => {
-                // For speed buff (ID 5), only include if not self-only (same logic as ATB boost)
-                // For ATB boost (ID 17), checkForAtbBoost already handles self_effect filtering
-                if (effect.effect.id === 5 && !effect.self_effect) {
+                if (effect.effect.id === 5 && effectAppliesToTeam(effect)) {
                     effectIds.push(effect.effect.id);
                 } else if (effect.effect.id === 17) {
-                    // ATB boost filtering is handled by checkForAtbBoost, but we need to check here too
-                    // For consistency, we'll check self_effect here as well
                     const isYeonhong = boosterMonster.name === "Yeonhong";
-                    if (isYeonhong || !effect.self_effect) {
+                    if (isYeonhong || effectAppliesToTeam(effect)) {
                         effectIds.push(effect.effect.id);
                     }
                 }
